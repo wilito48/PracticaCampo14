@@ -2,6 +2,7 @@ package votacion_vista;
 
 import votacion_util.ConexionDB;
 import votacion_modelo.Usuario;
+import votacion_controlador.ControladorLoginUsuario;
 
 import javax.swing.*;
 import java.awt.*;
@@ -25,13 +26,15 @@ public class VentanaLoginUsuario extends JFrame {
     private static final String LOGIN = "login";
     private static final String REGISTRO = "registro";
 
+    private ControladorLoginUsuario controlador;
+
     public VentanaLoginUsuario() {
         setTitle("Login Usuario");
         setSize(420, 400);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setResizable(false);
-
+        controlador = new ControladorLoginUsuario();
         inicializarComponentes();
         configurarLayout();
         agregarEventos();
@@ -283,24 +286,16 @@ public class VentanaLoginUsuario extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 String email = txtEmailLogin.getText().trim();
                 String password = new String(txtPasswordLogin.getPassword());
-
-                if (email.isEmpty() || password.isEmpty()) {
+                ControladorLoginUsuario.ResultadoLogin resultado = controlador.loginUsuario(email, password);
+                if (resultado.exito) {
                     JOptionPane.showMessageDialog(VentanaLoginUsuario.this,
-                            "Por favor complete todos los campos.",
-                            "Campos Vacíos", JOptionPane.WARNING_MESSAGE);
-                    return;
-                }
-
-                Usuario usuario = ConexionDB.autenticarUsuario(email, password);
-                if (usuario != null && "USUARIO".equals(usuario.getRol())) {
-                    JOptionPane.showMessageDialog(VentanaLoginUsuario.this,
-                            "¡Bienvenido!",
+                            resultado.mensaje,
                             "Acceso Concedido", JOptionPane.INFORMATION_MESSAGE);
-                    new PanelVotacionUsuario(usuario).setVisible(true);
-                    dispose(); // Cierra la ventana de login
+                    new PanelVotacionUsuario(resultado.usuario).setVisible(true);
+                    dispose();
                 } else {
                     JOptionPane.showMessageDialog(VentanaLoginUsuario.this,
-                            "Credenciales incorrectas o no es usuario.",
+                            resultado.mensaje,
                             "Acceso Denegado", JOptionPane.ERROR_MESSAGE);
                 }
             }
@@ -315,53 +310,15 @@ public class VentanaLoginUsuario extends JFrame {
                 String email = txtEmailRegistro.getText().trim();
                 String password = new String(txtPasswordRegistro.getPassword());
                 String passwordConfirm = new String(txtPasswordConfirm.getPassword());
-
-                if (nombre.isEmpty() || apellido.isEmpty() || dni.isEmpty() ||
-                        email.isEmpty() || password.isEmpty() || passwordConfirm.isEmpty()) {
+                ControladorLoginUsuario.ResultadoRegistro resultado = controlador.registrarUsuario(nombre, apellido, dni, email, password, passwordConfirm);
+                if (resultado.exito) {
                     JOptionPane.showMessageDialog(VentanaLoginUsuario.this,
-                            "Por favor complete todos los campos.",
-                            "Campos Vacíos", JOptionPane.WARNING_MESSAGE);
-                    return;
-                }
-
-                // Validar DNI exactamente 8 dígitos
-                if (dni.length() != 8) {
-                    JOptionPane.showMessageDialog(VentanaLoginUsuario.this,
-                            "El DNI debe tener exactamente 8 dígitos.",
-                            "DNI inválido", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-
-                if (!password.equals(passwordConfirm)) {
-                    JOptionPane.showMessageDialog(VentanaLoginUsuario.this,
-                            "Las contraseñas no coinciden.",
-                            "Error de Validación", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-
-                if (ConexionDB.emailExiste(email)) {
-                    JOptionPane.showMessageDialog(VentanaLoginUsuario.this,
-                            "El email ya está registrado.",
-                            "Error de Registro", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-
-                if (ConexionDB.dniExiste(dni)) {
-                    JOptionPane.showMessageDialog(VentanaLoginUsuario.this,
-                            "El DNI ya está registrado.",
-                            "Error de Registro", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-
-                Usuario nuevoUsuario = new Usuario(nombre, apellido, email, password, dni, "USUARIO");
-                if (ConexionDB.registrarUsuario(nuevoUsuario)) {
-                    JOptionPane.showMessageDialog(VentanaLoginUsuario.this,
-                            "Usuario registrado exitosamente. Ahora puede iniciar sesión.",
+                            resultado.mensaje,
                             "Registro Exitoso", JOptionPane.INFORMATION_MESSAGE);
                     cardLayout.show(panelContenedor, LOGIN);
                 } else {
                     JOptionPane.showMessageDialog(VentanaLoginUsuario.this,
-                            "Error al registrar el usuario.",
+                            resultado.mensaje,
                             "Error de Registro", JOptionPane.ERROR_MESSAGE);
                 }
             }

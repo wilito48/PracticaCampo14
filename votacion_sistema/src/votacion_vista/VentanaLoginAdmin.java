@@ -2,6 +2,7 @@ package votacion_vista;
 
 import votacion_util.ConexionDB;
 import votacion_modelo.Usuario;
+import votacion_controlador.ControladorLoginAdmin;
 
 import javax.swing.*;
 import java.awt.*;
@@ -12,6 +13,7 @@ public class VentanaLoginAdmin extends JFrame {
     private JTextField txtEmail;
     private JPasswordField txtPassword;
     private JButton btnLogin;
+    private ControladorLoginAdmin controlador;
 
     public VentanaLoginAdmin() {
         setTitle("Login Administrador");
@@ -23,6 +25,7 @@ public class VentanaLoginAdmin extends JFrame {
         // Fondo gradiente
         setContentPane(new PanelGradiente());
 
+        controlador = new ControladorLoginAdmin();
         inicializarComponentes();
         configurarLayout();
         agregarEventos();
@@ -139,25 +142,18 @@ public class VentanaLoginAdmin extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 String email = txtEmail.getText().trim();
                 String password = new String(txtPassword.getPassword());
-
-                if (email.isEmpty() || password.isEmpty()) {
+                ControladorLoginAdmin.ResultadoLogin resultado = controlador.loginAdmin(email, password);
+                if (resultado.exito) {
                     JOptionPane.showMessageDialog(VentanaLoginAdmin.this,
-                            "<html><span style='color:black;'>Por favor complete todos los campos.</span></html>",
-                            "Campos Vacíos", JOptionPane.WARNING_MESSAGE);
-                    return;
-                }
-
-                Usuario usuario = ConexionDB.autenticarUsuario(email, password);
-                if (usuario != null && "ADMIN".equals(usuario.getRol())) {
-                    JOptionPane.showMessageDialog(VentanaLoginAdmin.this,
-                            "<html><span style='color:black;'>¡Bienvenido, Administrador!</span></html>",
+                            "<html><span style='color:black;'>" + resultado.mensaje + "</span></html>",
                             "Acceso Concedido", JOptionPane.INFORMATION_MESSAGE);
-                    new PanelAdmin(usuario).setVisible(true);
-                    dispose(); // Cierra la ventana de login
+                    new PanelAdmin(resultado.usuario).setVisible(true);
+                    dispose();
                 } else {
                     JOptionPane.showMessageDialog(VentanaLoginAdmin.this,
-                            "<html><span style='color:black;'>Credenciales incorrectas o no es administrador.</span></html>",
-                            "Acceso Denegado", JOptionPane.ERROR_MESSAGE);
+                            "<html><span style='color:black;'>" + resultado.mensaje + "</span></html>",
+                            resultado.mensaje.equals("Por favor complete todos los campos.") ? "Campos Vacíos" : "Acceso Denegado",
+                            resultado.mensaje.equals("Por favor complete todos los campos.") ? JOptionPane.WARNING_MESSAGE : JOptionPane.ERROR_MESSAGE);
                 }
             }
         });

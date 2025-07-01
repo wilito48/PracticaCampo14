@@ -1,0 +1,45 @@
+# Compilados Java
+*.class
+
+# Carpetas de compilación
+/bin/
+/build/
+/out/
+/target/
+
+# Archivos de log y errores
+*.log
+hs_err_pid*
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# Archivos de Eclipse
+.classpath
+.project
+.settings/
+
+# Archivos de IntelliJ IDEA
+.idea/
+*.iml
+
+# Archivos de NetBeans
+nbproject/
+
+# Archivos temporales
+*.tmp
+*.bak
+*.swp
+
+# Archivos de base de datos temporales
+*.db
+*.sqlite
+
+# Otros
+*.jar
+*.war
+*.ear
+
+# Ignorar archivos de configuración personal
+*.env 

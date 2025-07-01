@@ -3,6 +3,7 @@ package votacion_vista;
 import votacion_modelo.Candidato;
 import votacion_modelo.Usuario;
 import votacion_util.ConexionDB;
+import votacion_controlador.ControladorPanelAdmin;
 
 import javax.swing.*;
 import java.awt.*;
@@ -20,6 +21,7 @@ public class PanelAdmin extends JFrame {
     private JTextArea txtResultados, txtUsuarios, txtCandidatos;
     private JTable tablaResultados;
     private DefaultTableModel modeloTablaResultados;
+    private ControladorPanelAdmin controlador;
 
     public PanelAdmin(Usuario admin) {
         this.admin = admin;
@@ -28,11 +30,10 @@ public class PanelAdmin extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setResizable(false);
-
+        controlador = new ControladorPanelAdmin();
         inicializarComponentes();
         configurarLayout();
         agregarEventos();
-
         // Timer para refrescar resultados cada 2 segundos
         Timer timerResultados = new Timer(2000, e -> mostrarResultados());
         timerResultados.start();
@@ -340,31 +341,15 @@ public class PanelAdmin extends JFrame {
                     int numero = Integer.parseInt(txtNumero.getText().trim());
                     String nombre = txtNombre.getText().trim();
                     String partido = txtPartido.getText().trim();
-                    if (nombre.isEmpty() || partido.isEmpty()) {
-                        JOptionPane.showMessageDialog(PanelAdmin.this, "Complete todos los campos.", "Error", JOptionPane.ERROR_MESSAGE);
-                        return;
-                    }
-                    // Validación: no permitir candidatos con el mismo número o nombre
-                    List<Candidato> candidatosExistentes = ConexionDB.obtenerCandidatos();
-                    for (Candidato c : candidatosExistentes) {
-                        if (c.getNumero() == numero) {
-                            JOptionPane.showMessageDialog(PanelAdmin.this, "Ya existe un candidato con ese número.", "Error", JOptionPane.ERROR_MESSAGE);
-                            return;
-                        }
-                        if (c.getNombre().equalsIgnoreCase(nombre)) {
-                            JOptionPane.showMessageDialog(PanelAdmin.this, "Ya existe un candidato con ese nombre.", "Error", JOptionPane.ERROR_MESSAGE);
-                            return;
-                        }
-                    }
-                    Candidato candidato = new Candidato(numero, nombre, partido);
-                    if (ConexionDB.registrarCandidato(candidato)) {
-                        JOptionPane.showMessageDialog(PanelAdmin.this, "Candidato registrado correctamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+                    ControladorPanelAdmin.ResultadoOperacion resultado = controlador.registrarCandidato(numero, nombre, partido);
+                    if (resultado.exito) {
+                        JOptionPane.showMessageDialog(PanelAdmin.this, resultado.mensaje, "Éxito", JOptionPane.INFORMATION_MESSAGE);
                         txtNumero.setText("");
                         txtNombre.setText("");
                         txtPartido.setText("");
                         mostrarResultados();
                     } else {
-                        JOptionPane.showMessageDialog(PanelAdmin.this, "Error al registrar candidato.", "Error", JOptionPane.ERROR_MESSAGE);
+                        JOptionPane.showMessageDialog(PanelAdmin.this, resultado.mensaje, "Error", JOptionPane.ERROR_MESSAGE);
                     }
                 } catch (NumberFormatException ex) {
                     JOptionPane.showMessageDialog(PanelAdmin.this, "Número inválido.", "Error", JOptionPane.ERROR_MESSAGE);
@@ -373,30 +358,31 @@ public class PanelAdmin extends JFrame {
         });
 
         btnIniciarVotacion.addActionListener(e -> {
-            List<Candidato> candidatosExistentes = ConexionDB.obtenerCandidatos();
-            if (candidatosExistentes.isEmpty()) {
-                JOptionPane.showMessageDialog(PanelAdmin.this, "Debe registrar al menos un candidato antes de iniciar la votación.", "Advertencia", JOptionPane.WARNING_MESSAGE);
-                return;
+            ControladorPanelAdmin.ResultadoOperacion resultado = controlador.iniciarVotacion();
+            if (resultado.exito) {
+                JOptionPane.showMessageDialog(PanelAdmin.this, resultado.mensaje, "Votación", JOptionPane.INFORMATION_MESSAGE);
+                mostrarResultados();
+            } else {
+                JOptionPane.showMessageDialog(PanelAdmin.this, resultado.mensaje, "Advertencia", JOptionPane.WARNING_MESSAGE);
             }
-            JOptionPane.showMessageDialog(PanelAdmin.this, "¡Votación iniciada! Los usuarios ya pueden votar.", "Votación", JOptionPane.INFORMATION_MESSAGE);
-            mostrarResultados();
         });
 
         btnFinalizarVotacion.addActionListener(e -> {
             int confirm = JOptionPane.showConfirmDialog(PanelAdmin.this, "¿Está seguro que desea finalizar la votación?", "Confirmar", JOptionPane.YES_NO_OPTION);
             if (confirm == JOptionPane.YES_OPTION) {
+                ControladorPanelAdmin.ResultadoOperacion resultado = controlador.finalizarVotacion();
                 btnFinalizarVotacion.setEnabled(false);
                 mostrarResultados();
-                JOptionPane.showMessageDialog(PanelAdmin.this, "¡Votación finalizada!", "Votación", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(PanelAdmin.this, resultado.mensaje, "Votación", JOptionPane.INFORMATION_MESSAGE);
             }
         });
 
         btnReiniciarVotacion.addActionListener(e -> {
             int confirm = JOptionPane.showConfirmDialog(PanelAdmin.this, "¿Está seguro que desea reiniciar la votación? Esto borrará todos los votos actuales.", "Confirmar", JOptionPane.YES_NO_OPTION);
             if (confirm == JOptionPane.YES_OPTION) {
-                ConexionDB.reiniciarVotos();
+                ControladorPanelAdmin.ResultadoOperacion resultado = controlador.reiniciarVotacion();
                 txtResultados.setText("RESULTADOS DE LA VOTACIÓN\n=========================\n\nVotación reiniciada.\n\nTotal de votos emitidos: 0\n");
-                JOptionPane.showMessageDialog(PanelAdmin.this, "¡Nueva votación iniciada! Todos los usuarios pueden votar de nuevo.", "Votación", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(PanelAdmin.this, resultado.mensaje, "Votación", JOptionPane.INFORMATION_MESSAGE);
             }
         });
 
@@ -409,51 +395,16 @@ public class PanelAdmin extends JFrame {
         });
 
         btnExportarResultados.addActionListener(e -> {
-            String[] opciones = {".txt (Visual)", ".csv (Excel)", "Cancelar"};
-            int seleccion = JOptionPane.showOptionDialog(PanelAdmin.this, "¿En qué formato desea exportar los resultados?", "Exportar Resultados",
-                    JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, opciones, opciones[0]);
-            if (seleccion == 2 || seleccion == JOptionPane.CLOSED_OPTION) return;
             JFileChooser fileChooser = new JFileChooser();
-            fileChooser.setDialogTitle("Guardar Resultados");
-            if (seleccion == 0) fileChooser.setSelectedFile(new java.io.File("resultados.txt"));
-            else if (seleccion == 1) fileChooser.setSelectedFile(new java.io.File("resultados.csv"));
-            int userSelection = fileChooser.showSaveDialog(PanelAdmin.this);
-            if (userSelection == JFileChooser.APPROVE_OPTION) {
-                java.io.File fileToSave = fileChooser.getSelectedFile();
-                try (java.io.FileWriter fw = new java.io.FileWriter(fileToSave)) {
-                    if (seleccion == 0) {
-                        // Exportar como .txt visual
-                        StringBuilder txt = new StringBuilder();
-                        txt.append("RESULTADOS DE LA VOTACIÓN\n=========================\n\n");
-                        // Encabezado tabla
-                        txt.append(String.format("%-4s %-15s %-15s %-7s %-10s\n", "N°", "Nombre", "Partido", "Votos", "Porcentaje"));
-                        for (int i = 0; i < modeloTablaResultados.getRowCount(); i++) {
-                            txt.append(String.format("%-4s %-15s %-15s %-7s %-9.2f%%\n",
-                                modeloTablaResultados.getValueAt(i, 0),
-                                modeloTablaResultados.getValueAt(i, 1),
-                                modeloTablaResultados.getValueAt(i, 2),
-                                modeloTablaResultados.getValueAt(i, 3),
-                                (double)modeloTablaResultados.getValueAt(i, 4)));
-                        }
-                        txt.append("\n").append(txtResultados.getText());
-                        fw.write(txt.toString());
-                    } else if (seleccion == 1) {
-                        // Exportar como .csv
-                        StringBuilder csv = new StringBuilder();
-                        csv.append("Numero,Nombre,Partido,Votos,Porcentaje\n");
-                        for (int i = 0; i < modeloTablaResultados.getRowCount(); i++) {
-                            csv.append(String.format("%s,%s,%s,%s,%.2f%%\n",
-                                modeloTablaResultados.getValueAt(i, 0),
-                                modeloTablaResultados.getValueAt(i, 1),
-                                modeloTablaResultados.getValueAt(i, 2),
-                                modeloTablaResultados.getValueAt(i, 3),
-                                (double)modeloTablaResultados.getValueAt(i, 4)));
-                        }
-                        fw.write(csv.toString());
-                    }
-                    JOptionPane.showMessageDialog(PanelAdmin.this, "Resultados exportados correctamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-                } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(PanelAdmin.this, "Error al exportar resultados: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            int seleccion = fileChooser.showSaveDialog(PanelAdmin.this);
+            if (seleccion == JFileChooser.APPROVE_OPTION) {
+                java.io.File archivo = fileChooser.getSelectedFile();
+                String contenido = txtResultados.getText();
+                ControladorPanelAdmin.ResultadoOperacion resultado = controlador.exportarResultados(contenido, archivo);
+                if (resultado.exito) {
+                    JOptionPane.showMessageDialog(PanelAdmin.this, resultado.mensaje, "Exportación", JOptionPane.INFORMATION_MESSAGE);
+                } else {
+                    JOptionPane.showMessageDialog(PanelAdmin.this, resultado.mensaje, "Error", JOptionPane.ERROR_MESSAGE);
                 }
             }
         });
@@ -517,13 +468,12 @@ public class PanelAdmin extends JFrame {
     }
 
     private void mostrarUsuarios() {
-        List<Usuario> usuarios = ConexionDB.obtenerUsuarios(); // Debe existir este método
+        java.util.List<votacion_modelo.Usuario> usuarios = controlador.obtenerUsuarios();
         StringBuilder sb = new StringBuilder();
-        sb.append("\nID | Nombre           | Apellido         | Email\n");
-        sb.append("================================================================\n");
-        for (Usuario u : usuarios) {
-            sb.append(String.format("%-2d | %-16s | %-16s | %s\n",
-                u.getId(), u.getNombre(), u.getApellido(), u.getEmail()));
+        sb.append(String.format("%-12s | %-22s | %-10s\n", "Nombre", "Email", "DNI"));
+        sb.append("----------------------------------------------------------\n");
+        for (votacion_modelo.Usuario u : usuarios) {
+            sb.append(String.format("%-12s | %-22s | %-10s\n", u.getNombre(), u.getEmail(), u.getDni()));
         }
         if (usuarios.isEmpty()) {
             sb.append("No hay usuarios registrados.\n");
@@ -531,14 +481,13 @@ public class PanelAdmin extends JFrame {
         txtUsuarios.setText(sb.toString());
     }
 
-    // Mostrar candidatos registrados
     private void mostrarCandidatos() {
-        List<Candidato> candidatos = ConexionDB.obtenerCandidatos();
+        java.util.List<votacion_modelo.Candidato> candidatos = controlador.obtenerCandidatos();
         StringBuilder sb = new StringBuilder();
-        sb.append("\nN° | Nombre          | Partido\n");
-        sb.append("===============================\n");
-        for (Candidato c : candidatos) {
-            sb.append(String.format("%-2d | %-15s | %s\n", c.getNumero(), c.getNombre(), c.getPartido()));
+        sb.append(String.format("%-4s | %-15s | %-15s\n", "N°", "Nombre", "Partido"));
+        sb.append("-----------------------------------------------\n");
+        for (votacion_modelo.Candidato c : candidatos) {
+            sb.append(String.format("%-4d | %-15s | %-15s\n", c.getNumero(), c.getNombre(), c.getPartido()));
         }
         if (candidatos.isEmpty()) {
             sb.append("No hay candidatos registrados.\n");
