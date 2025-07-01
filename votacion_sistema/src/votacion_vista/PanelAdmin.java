@@ -448,27 +448,37 @@ public class PanelAdmin extends JFrame {
     private void mostrarResultados() {
         List<Candidato> candidatos = ConexionDB.obtenerCandidatos();
         StringBuilder sb = new StringBuilder();
-        sb.append("RESULTADOS DE LA VOTACIÓN\n");
-        sb.append("=========================\n\n");
+        sb.append("========================================\n");
+        sb.append("         RESULTADOS DE LA VOTACIÓN\n");
+        sb.append("========================================\n\n");
         int totalVotos = 0;
         for (Candidato c : candidatos) {
             totalVotos += c.getVotos();
         }
-        // Actualizar tabla
+        // Actualizar tabla visual
         modeloTablaResultados.setRowCount(0);
         int maxVotos = -1;
         for (Candidato c : candidatos) {
             if (c.getVotos() > maxVotos) maxVotos = c.getVotos();
         }
+        int i = 1;
         for (Candidato c : candidatos) {
             double porcentaje = totalVotos > 0 ? (c.getVotos() * 100.0 / totalVotos) : 0.0;
             modeloTablaResultados.addRow(new Object[]{c.getNumero(), c.getNombre(), c.getPartido(), c.getVotos(), porcentaje});
         }
-        sb.append("\nTotal de votos emitidos: ").append(totalVotos).append("\n\n");
-
+        // Construir string para exportar
+        sb.append(String.format("Total de votos emitidos: %d\n\n", totalVotos));
+        sb.append("----------------------------------------\n");
+        sb.append(String.format("| %-3s | %-16s | %-8s | %-5s | %-6s |\n", "N°", "Candidato", "Partido", "Votos", "%"));
+        sb.append("----------------------------------------\n");
+        i = 1;
+        for (Candidato c : candidatos) {
+            double porcentaje = totalVotos > 0 ? (c.getVotos() * 100.0 / totalVotos) : 0.0;
+            sb.append(String.format("| %-3d | %-16s | %-8s | %-5d | %5.2f |\n", i++, c.getNombre(), c.getPartido(), c.getVotos(), porcentaje));
+        }
+        sb.append("----------------------------------------\n\n");
         // Mostrar ganador o empate solo si la votación está finalizada (botón Finalizar Votación)
         if (!btnFinalizarVotacion.isEnabled()) {
-            // Buscar candidatos con máximo de votos
             List<Candidato> ganadores = new java.util.ArrayList<>();
             for (Candidato c : candidatos) {
                 if (c.getVotos() == maxVotos && maxVotos > 0) {
@@ -478,20 +488,18 @@ public class PanelAdmin extends JFrame {
             if (ganadores.size() == 1) {
                 Candidato ganador = ganadores.get(0);
                 double porcentajeGanador = totalVotos > 0 ? (ganador.getVotos() * 100.0 / totalVotos) : 0.0;
-                sb.append("\nGANADOR: ").append(ganador.getNombre()).append(" (").append(ganador.getPartido()).append(") con ")
-                  .append(ganador.getVotos()).append(" votos (" + String.format("%.2f", porcentajeGanador) + "%)\n");
+                sb.append(String.format("GANADOR: %s (%s) con %d votos (%.2f%%)\n", ganador.getNombre(), ganador.getPartido(), ganador.getVotos(), porcentajeGanador));
             } else if (ganadores.size() > 1) {
-                sb.append("\nEMPATE entre: ");
-                for (int i = 0; i < ganadores.size(); i++) {
-                    Candidato emp = ganadores.get(i);
+                sb.append("EMPATE entre: ");
+                for (int j = 0; j < ganadores.size(); j++) {
+                    Candidato emp = ganadores.get(j);
                     double porcentajeEmp = totalVotos > 0 ? (emp.getVotos() * 100.0 / totalVotos) : 0.0;
-                    sb.append(emp.getNombre()).append(" (").append(emp.getVotos()).append(" votos, ")
-                      .append(String.format("%.2f", porcentajeEmp)).append("%)");
-                    if (i < ganadores.size() - 1) sb.append(", ");
+                    sb.append(String.format("%s (%d votos, %.2f%%)", emp.getNombre(), emp.getVotos(), porcentajeEmp));
+                    if (j < ganadores.size() - 1) sb.append(", ");
                 }
                 sb.append("\n");
             } else {
-                sb.append("\nNo hay votos registrados.\n");
+                sb.append("No hay votos registrados.\n");
             }
         }
         txtResultados.setText(sb.toString());
@@ -500,10 +508,11 @@ public class PanelAdmin extends JFrame {
     private void mostrarUsuarios() {
         java.util.List<votacion_modelo.Usuario> usuarios = controlador.obtenerUsuarios();
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format("%-12s | %-22s | %-10s\n", "Nombre", "Email", "DNI"));
-        sb.append("----------------------------------------------------------\n");
+        sb.append(String.format("%-4s | %-12s | %-22s | %-10s\n", "N°", "Nombre", "Email", "DNI"));
+        sb.append("---------------------------------------------------------------\n");
+        int i = 1;
         for (votacion_modelo.Usuario u : usuarios) {
-            sb.append(String.format("%-12s | %-22s | %-10s\n", u.getNombre(), u.getEmail(), u.getDni()));
+            sb.append(String.format("%-4d | %-12s | %-22s | %-10s\n", i++, u.getNombre(), u.getEmail(), u.getDni()));
         }
         if (usuarios.isEmpty()) {
             sb.append("No hay usuarios registrados.\n");

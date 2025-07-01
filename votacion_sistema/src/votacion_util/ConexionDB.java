@@ -443,7 +443,7 @@ public class ConexionDB {
     public static List<Usuario> obtenerUsuarios() {
         List<Usuario> usuarios = new ArrayList<>();
         try {
-            String sql = "SELECT id, nombre, apellido, email FROM usuarios ORDER BY id";
+            String sql = "SELECT id, nombre, apellido, email, dni FROM usuarios ORDER BY id";
             Statement stmt = conexion.createStatement();
             ResultSet rs = stmt.executeQuery(sql);
             while (rs.next()) {
@@ -453,7 +453,7 @@ public class ConexionDB {
                     rs.getString("apellido"),
                     rs.getString("email"),
                     "", // password no se muestra
-                    "", // dni no se muestra
+                    rs.getString("dni"), // ahora sí traes el DNI
                     "USUARIO" // o puedes traer el rol si lo necesitas
                 );
                 usuarios.add(usuario);

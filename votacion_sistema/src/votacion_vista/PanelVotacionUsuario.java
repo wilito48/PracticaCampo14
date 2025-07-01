@@ -32,6 +32,7 @@ public class PanelVotacionUsuario extends JFrame {
      * Etiqueta para mostrar mensajes al usuario.
      */
     private JLabel lblMensaje;
+    private JButton btnCerrarSesion;
 
     /**
      * Constructor del panel de votación de usuario.
@@ -40,7 +41,7 @@ public class PanelVotacionUsuario extends JFrame {
     public PanelVotacionUsuario(Usuario usuario) {
         this.usuario = usuario;
         setTitle("Panel de Usuario - Votación");
-        setSize(520, 480);
+        setSize(600, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setResizable(false);
@@ -99,6 +100,26 @@ public class PanelVotacionUsuario extends JFrame {
             }
         });
 
+        btnCerrarSesion = new JButton("CERRAR SESIÓN");
+        btnCerrarSesion.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        btnCerrarSesion.setBackground(new Color(231, 76, 60));
+        btnCerrarSesion.setForeground(Color.WHITE);
+        btnCerrarSesion.setFocusPainted(false);
+        btnCerrarSesion.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnCerrarSesion.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(192, 57, 43), 1, true),
+            BorderFactory.createEmptyBorder(10, 35, 10, 35)
+        ));
+        btnCerrarSesion.setPreferredSize(new Dimension(160, 44));
+        btnCerrarSesion.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btnCerrarSesion.setBackground(new Color(192, 57, 43));
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btnCerrarSesion.setBackground(new Color(231, 76, 60));
+            }
+        });
+
         grupoCandidatos = new ButtonGroup();
         for (Candidato candidato : ConexionDB.obtenerCandidatos()) {
             JRadioButton radio = new JRadioButton(candidato.getNombre());
@@ -124,19 +145,16 @@ public class PanelVotacionUsuario extends JFrame {
                 super.paintComponent(g);
                 Graphics2D g2 = (Graphics2D) g;
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                // Sombra
-                g2.setColor(new Color(0,0,0,30));
-                g2.fillRoundRect(8, 8, getWidth()-16, getHeight()-16, 28, 28);
-                // Fondo blanco
-                g2.setColor(new Color(255, 255, 255));
+                // Fondo blanco sin sombra
+                g2.setColor(new Color(255, 255, 255, 245));
                 g2.fillRoundRect(0, 0, getWidth()-1, getHeight()-1, 22, 22);
             }
         };
         panelCentral.setOpaque(false);
         panelCentral.setLayout(new BoxLayout(panelCentral, BoxLayout.Y_AXIS));
-        panelCentral.setBorder(BorderFactory.createEmptyBorder(24, 32, 24, 32));
-        panelCentral.setMaximumSize(new Dimension(420, 380));
-        panelCentral.setPreferredSize(new Dimension(420, 380));
+        panelCentral.setBorder(BorderFactory.createEmptyBorder(32, 32, 32, 32));
+        panelCentral.setMaximumSize(new Dimension(420, 420));
+        panelCentral.setPreferredSize(new Dimension(420, 420));
 
         // Icono de votación
         JLabel lblIcon = new JLabel();
@@ -183,17 +201,21 @@ public class PanelVotacionUsuario extends JFrame {
         btnVotar.setAlignmentX(Component.CENTER_ALIGNMENT);
         panelCentral.add(Box.createRigidArea(new Dimension(0, 18)));
         panelCentral.add(btnVotar);
+        // Botón cerrar sesión
+        btnCerrarSesion.setAlignmentX(Component.CENTER_ALIGNMENT);
+        panelCentral.add(Box.createRigidArea(new Dimension(0, 10)));
+        panelCentral.add(btnCerrarSesion);
 
         // Centrado vertical y horizontal
         setLayout(new GridBagLayout());
-        add(panelCentral);
-
-        // Panel inferior con mensaje
-        JPanel panelInferior = new JPanel(new BorderLayout());
-        panelInferior.setOpaque(false);
-        panelInferior.add(lblMensaje, BorderLayout.SOUTH);
-        panelInferior.setBorder(BorderFactory.createEmptyBorder(10, 40, 20, 40));
-        add(panelInferior, BorderLayout.SOUTH);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 1.0;
+        gbc.weighty = 1.0;
+        gbc.anchor = GridBagConstraints.CENTER;
+        gbc.fill = GridBagConstraints.NONE;
+        add(panelCentral, gbc);
     }
 
     /**
@@ -229,6 +251,10 @@ public class PanelVotacionUsuario extends JFrame {
                 }
             }
         });
+        btnCerrarSesion.addActionListener(e -> {
+            dispose();
+            new VentanaSeleccionRol().setVisible(true);
+        });
     }
 
     /**
@@ -252,8 +278,8 @@ public class PanelVotacionUsuario extends JFrame {
             Graphics2D g2d = (Graphics2D) g;
             int w = getWidth();
             int h = getHeight();
-            Color color1 = new Color(236, 240, 241);
-            Color color2 = new Color(189, 195, 199);
+            Color color1 = new Color(236, 240, 245);
+            Color color2 = new Color(200, 220, 235);
             GradientPaint gp = new GradientPaint(0, 0, color1, 0, h, color2);
             g2d.setPaint(gp);
             g2d.fillRect(0, 0, w, h);
