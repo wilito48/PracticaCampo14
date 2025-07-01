@@ -431,4 +431,29 @@ public class ConexionDB {
             System.err.println("Error al reiniciar votos: " + e.getMessage());
         }
     }
+    public static List<Usuario> obtenerUsuarios() {
+        List<Usuario> usuarios = new ArrayList<>();
+        try {
+            String sql = "SELECT id, nombre, apellido, email FROM usuarios ORDER BY id";
+            Statement stmt = conexion.createStatement();
+            ResultSet rs = stmt.executeQuery(sql);
+            while (rs.next()) {
+                Usuario usuario = new Usuario(
+                    rs.getInt("id"),
+                    rs.getString("nombre"),
+                    rs.getString("apellido"),
+                    rs.getString("email"),
+                    "", // password no se muestra
+                    "", // dni no se muestra
+                    "USUARIO" // o puedes traer el rol si lo necesitas
+                );
+                usuarios.add(usuario);
+            }
+            rs.close();
+            stmt.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return usuarios;
+    }
 } 

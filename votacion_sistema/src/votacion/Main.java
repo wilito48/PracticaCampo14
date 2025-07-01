@@ -4,6 +4,7 @@ import votacion_vista.VentanaSeleccionRol;
 import votacion_util.ConexionDB;
 
 import javax.swing.*;
+import java.awt.Color;
 
 public class Main {
     
@@ -11,32 +12,40 @@ public class Main {
      * Método principal de la aplicación
      * @param args Argumentos de línea de comandos
      */
-    public static void main(String[] args) {
-        // Configurar el look and feel del sistema operativo
-        configurarLookAndFeel();
-        
-        // Conectar con la base de datos
-        if (!conectarBaseDatos()) {
-            return; // Salir si no se puede conectar
-        }
-        
-        // Ejecutar la aplicación en el Event Dispatch Thread (EDT)
-        SwingUtilities.invokeLater(() -> {
-            try {
-            	// Crear y mostrar la ventana de selección de rol
-            	VentanaSeleccionRol ventanaSeleccionRol = new VentanaSeleccionRol();
-            	ventanaSeleccionRol.setVisible(true);
-                
-            } catch (Exception e) {
-                // Manejar errores de inicialización
-                JOptionPane.showMessageDialog(null,
-                    "Error al iniciar la aplicación: " + e.getMessage(),
-                    "Error de Inicialización",
-                    JOptionPane.ERROR_MESSAGE);
-                System.exit(1);
-            }
-        });
-    }
+	public static void main(String[] args) {
+	    try {
+	        for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
+	            if ("Nimbus".equals(info.getName())) {
+	                UIManager.setLookAndFeel(info.getClassName());
+	                break;
+	            }
+	        }
+	    } catch (Exception e) {
+	        // Si Nimbus no está disponible, se usa el predeterminado
+	    }
+
+	    // Configura tus colores personalizados si quieres (opcional)
+	    configurarEstilosPersonalizados();
+
+	    // Conectar con la base de datos
+	    if (!conectarBaseDatos()) {
+	        return; // Salir si no se puede conectar
+	    }
+
+	    // Ejecutar la aplicación en el Event Dispatch Thread (EDT)
+	    SwingUtilities.invokeLater(() -> {
+	        try {
+	            VentanaSeleccionRol ventanaSeleccionRol = new VentanaSeleccionRol();
+	            ventanaSeleccionRol.setVisible(true);
+	        } catch (Exception e) {
+	            JOptionPane.showMessageDialog(null,
+	                "Error al iniciar la aplicación: " + e.getMessage(),
+	                "Error de Inicialización",
+	                JOptionPane.ERROR_MESSAGE);
+	            System.exit(1);
+	        }
+	    });
+	}
     
     /**
      * Conecta con la base de datos MySQL
