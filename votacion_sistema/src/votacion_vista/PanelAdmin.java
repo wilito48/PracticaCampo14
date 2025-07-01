@@ -9,17 +9,22 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.List;
+import javax.swing.Timer;
+import javax.swing.JFileChooser;
+import javax.swing.table.*;
 
 public class PanelAdmin extends JFrame {
     private Usuario admin;
     private JTextField txtNumero, txtNombre, txtPartido;
-    private JButton btnRegistrarCandidato, btnIniciarVotacion, btnFinalizarVotacion, btnVerUsuarios, btnVerCandidatos;
+    private JButton btnRegistrarCandidato, btnIniciarVotacion, btnFinalizarVotacion, btnVerUsuarios, btnVerCandidatos, btnReiniciarVotacion, btnExportarResultados, btnCerrarSesion;
     private JTextArea txtResultados, txtUsuarios, txtCandidatos;
+    private JTable tablaResultados;
+    private DefaultTableModel modeloTablaResultados;
 
     public PanelAdmin(Usuario admin) {
         this.admin = admin;
         setTitle("Panel de Administrador");
-        setSize(900, 600);
+        setSize(1200, 800);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setResizable(false);
@@ -27,6 +32,10 @@ public class PanelAdmin extends JFrame {
         inicializarComponentes();
         configurarLayout();
         agregarEventos();
+
+        // Timer para refrescar resultados cada 2 segundos
+        Timer timerResultados = new Timer(2000, e -> mostrarResultados());
+        timerResultados.start();
     }
 
     private void inicializarComponentes() {
@@ -42,6 +51,42 @@ public class PanelAdmin extends JFrame {
         btnFinalizarVotacion = new JButton("Finalizar Votación");
         btnVerUsuarios = new JButton("Ver Usuarios");
         btnVerCandidatos = new JButton("Ver Candidatos");
+        btnReiniciarVotacion = new JButton("Reiniciar Votación");
+        btnExportarResultados = new JButton("Exportar Resultados");
+
+        // Cargar y escalar el icono de logout
+        ImageIcon iconoLogout = null;
+        try {
+            ImageIcon icon = new ImageIcon(getClass().getResource("/logout.png"));
+            Image img = icon.getImage().getScaledInstance(24, 24, Image.SCALE_SMOOTH);
+            iconoLogout = new ImageIcon(img);
+        } catch (Exception ex) {
+            // Si no se encuentra el icono, el botón solo tendrá texto
+        }
+        if (iconoLogout != null) {
+            btnCerrarSesion = new JButton("Cerrar Sesión", iconoLogout);
+        } else {
+            btnCerrarSesion = new JButton("Cerrar Sesión");
+        }
+        btnCerrarSesion.setFocusPainted(false);
+        btnCerrarSesion.setBackground(new Color(0, 120, 200));
+        btnCerrarSesion.setForeground(Color.WHITE);
+        btnCerrarSesion.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btnCerrarSesion.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(0, 90, 160), 2, true),
+            BorderFactory.createEmptyBorder(8, 18, 8, 18)
+        ));
+        btnCerrarSesion.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnCerrarSesion.setHorizontalTextPosition(SwingConstants.RIGHT);
+        btnCerrarSesion.setIconTextGap(8);
+        btnCerrarSesion.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btnCerrarSesion.setBackground(new Color(0, 90, 160));
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btnCerrarSesion.setBackground(new Color(0, 120, 200));
+            }
+        });
 
         // Aquí agregas el tamaño preferido de los botones de acciones
         btnVerUsuarios.setPreferredSize(new Dimension(140, 32));
@@ -56,6 +101,38 @@ public class PanelAdmin extends JFrame {
         txtCandidatos = new JTextArea(12, 25);
         txtCandidatos.setEditable(false);
         txtCandidatos.setFont(new Font("Consolas", Font.PLAIN, 14));
+
+        // Tabla de resultados
+        modeloTablaResultados = new DefaultTableModel(new Object[]{"N°", "Nombre", "Partido", "Votos", "Porcentaje"}, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) { return false; }
+        };
+        tablaResultados = new JTable(modeloTablaResultados) {
+            @Override
+            public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
+                Component c = super.prepareRenderer(renderer, row, column);
+                int votos = Integer.parseInt(getValueAt(row, 3).toString());
+                int maxVotos = 0;
+                for (int i = 0; i < getRowCount(); i++) {
+                    int v = Integer.parseInt(getValueAt(i, 3).toString());
+                    if (v > maxVotos) maxVotos = v;
+                }
+                if (votos == maxVotos && maxVotos > 0) {
+                    c.setBackground(new Color(200, 255, 200)); // Verde claro para ganador
+                } else {
+                    c.setBackground(Color.WHITE);
+                }
+                if (isCellSelected(row, column)) {
+                    c.setBackground(new Color(184, 207, 229));
+                }
+                return c;
+            }
+        };
+        tablaResultados.setRowHeight(28);
+        tablaResultados.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        tablaResultados.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 14));
+        // Barra de progreso en columna porcentaje
+        tablaResultados.getColumnModel().getColumn(4).setCellRenderer(new ProgressBarRenderer());
     }
 
     private void configurarLayout() {
@@ -91,6 +168,7 @@ public class PanelAdmin extends JFrame {
         textPanel.add(lblTitulo);
         textPanel.add(lblAdmin);
         headerPanel.add(textPanel, BorderLayout.CENTER);
+        headerPanel.add(btnCerrarSesion, BorderLayout.EAST);
         headerPanel.setBorder(BorderFactory.createEmptyBorder(0,0,18,0));
         mainPanel.add(headerPanel, BorderLayout.NORTH);
 
@@ -131,6 +209,7 @@ public class PanelAdmin extends JFrame {
         ));
         panelVotacion.add(btnIniciarVotacion);
         panelVotacion.add(btnFinalizarVotacion);
+        panelVotacion.add(btnReiniciarVotacion);
 
         // Panel de acciones para usuarios
         JPanel panelAccionesUsuarios = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 5));
@@ -177,6 +256,14 @@ public class PanelAdmin extends JFrame {
         JScrollPane scrollResultados = new JScrollPane(txtResultados);
         scrollResultados.setBorder(BorderFactory.createEmptyBorder());
         panelResultados.add(scrollResultados, BorderLayout.CENTER);
+        // Tabla de resultados debajo del área de texto
+        JScrollPane scrollTabla = new JScrollPane(tablaResultados);
+        scrollTabla.setPreferredSize(new Dimension(0, 140));
+        panelResultados.add(scrollTabla, BorderLayout.NORTH);
+        JPanel panelBotonExportar = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
+        panelBotonExportar.setOpaque(false);
+        panelBotonExportar.add(btnExportarResultados);
+        panelResultados.add(panelBotonExportar, BorderLayout.SOUTH);
 
         // Panel superior (registro + control)
         JPanel panelTop = new JPanel();
@@ -213,6 +300,36 @@ public class PanelAdmin extends JFrame {
                 }
             });
         }
+
+        // Botón moderno para reiniciar
+        btnReiniciarVotacion.setFocusPainted(false);
+        btnReiniciarVotacion.setBackground(new Color(0, 120, 200));
+        btnReiniciarVotacion.setForeground(Color.WHITE);
+        btnReiniciarVotacion.setFont(new Font("Arial", Font.BOLD, 13));
+        btnReiniciarVotacion.setBorder(BorderFactory.createEmptyBorder(8, 18, 8, 18));
+        btnReiniciarVotacion.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btnReiniciarVotacion.setBackground(new Color(0, 90, 160));
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btnReiniciarVotacion.setBackground(new Color(0, 120, 200));
+            }
+        });
+
+        // Botón moderno para exportar
+        btnExportarResultados.setFocusPainted(false);
+        btnExportarResultados.setBackground(new Color(0, 120, 200));
+        btnExportarResultados.setForeground(Color.WHITE);
+        btnExportarResultados.setFont(new Font("Arial", Font.BOLD, 13));
+        btnExportarResultados.setBorder(BorderFactory.createEmptyBorder(8, 18, 8, 18));
+        btnExportarResultados.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btnExportarResultados.setBackground(new Color(0, 90, 160));
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btnExportarResultados.setBackground(new Color(0, 120, 200));
+            }
+        });
     }
 
     private void agregarEventos() {
@@ -227,12 +344,25 @@ public class PanelAdmin extends JFrame {
                         JOptionPane.showMessageDialog(PanelAdmin.this, "Complete todos los campos.", "Error", JOptionPane.ERROR_MESSAGE);
                         return;
                     }
+                    // Validación: no permitir candidatos con el mismo número o nombre
+                    List<Candidato> candidatosExistentes = ConexionDB.obtenerCandidatos();
+                    for (Candidato c : candidatosExistentes) {
+                        if (c.getNumero() == numero) {
+                            JOptionPane.showMessageDialog(PanelAdmin.this, "Ya existe un candidato con ese número.", "Error", JOptionPane.ERROR_MESSAGE);
+                            return;
+                        }
+                        if (c.getNombre().equalsIgnoreCase(nombre)) {
+                            JOptionPane.showMessageDialog(PanelAdmin.this, "Ya existe un candidato con ese nombre.", "Error", JOptionPane.ERROR_MESSAGE);
+                            return;
+                        }
+                    }
                     Candidato candidato = new Candidato(numero, nombre, partido);
                     if (ConexionDB.registrarCandidato(candidato)) {
                         JOptionPane.showMessageDialog(PanelAdmin.this, "Candidato registrado correctamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
                         txtNumero.setText("");
                         txtNombre.setText("");
                         txtPartido.setText("");
+                        mostrarResultados();
                     } else {
                         JOptionPane.showMessageDialog(PanelAdmin.this, "Error al registrar candidato.", "Error", JOptionPane.ERROR_MESSAGE);
                     }
@@ -243,12 +373,31 @@ public class PanelAdmin extends JFrame {
         });
 
         btnIniciarVotacion.addActionListener(e -> {
-            ConexionDB.reiniciarVotos();
+            List<Candidato> candidatosExistentes = ConexionDB.obtenerCandidatos();
+            if (candidatosExistentes.isEmpty()) {
+                JOptionPane.showMessageDialog(PanelAdmin.this, "Debe registrar al menos un candidato antes de iniciar la votación.", "Advertencia", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
             JOptionPane.showMessageDialog(PanelAdmin.this, "¡Votación iniciada! Los usuarios ya pueden votar.", "Votación", JOptionPane.INFORMATION_MESSAGE);
+            mostrarResultados();
         });
 
         btnFinalizarVotacion.addActionListener(e -> {
-            mostrarResultados();
+            int confirm = JOptionPane.showConfirmDialog(PanelAdmin.this, "¿Está seguro que desea finalizar la votación?", "Confirmar", JOptionPane.YES_NO_OPTION);
+            if (confirm == JOptionPane.YES_OPTION) {
+                btnFinalizarVotacion.setEnabled(false);
+                mostrarResultados();
+                JOptionPane.showMessageDialog(PanelAdmin.this, "¡Votación finalizada!", "Votación", JOptionPane.INFORMATION_MESSAGE);
+            }
+        });
+
+        btnReiniciarVotacion.addActionListener(e -> {
+            int confirm = JOptionPane.showConfirmDialog(PanelAdmin.this, "¿Está seguro que desea reiniciar la votación? Esto borrará todos los votos actuales.", "Confirmar", JOptionPane.YES_NO_OPTION);
+            if (confirm == JOptionPane.YES_OPTION) {
+                ConexionDB.reiniciarVotos();
+                txtResultados.setText("RESULTADOS DE LA VOTACIÓN\n=========================\n\nVotación reiniciada.\n\nTotal de votos emitidos: 0\n");
+                JOptionPane.showMessageDialog(PanelAdmin.this, "¡Nueva votación iniciada! Todos los usuarios pueden votar de nuevo.", "Votación", JOptionPane.INFORMATION_MESSAGE);
+            }
         });
 
         btnVerUsuarios.addActionListener(e -> {
@@ -257,6 +406,61 @@ public class PanelAdmin extends JFrame {
 
         btnVerCandidatos.addActionListener(e -> {
             mostrarCandidatos();
+        });
+
+        btnExportarResultados.addActionListener(e -> {
+            String[] opciones = {".txt (Visual)", ".csv (Excel)", "Cancelar"};
+            int seleccion = JOptionPane.showOptionDialog(PanelAdmin.this, "¿En qué formato desea exportar los resultados?", "Exportar Resultados",
+                    JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, opciones, opciones[0]);
+            if (seleccion == 2 || seleccion == JOptionPane.CLOSED_OPTION) return;
+            JFileChooser fileChooser = new JFileChooser();
+            fileChooser.setDialogTitle("Guardar Resultados");
+            if (seleccion == 0) fileChooser.setSelectedFile(new java.io.File("resultados.txt"));
+            else if (seleccion == 1) fileChooser.setSelectedFile(new java.io.File("resultados.csv"));
+            int userSelection = fileChooser.showSaveDialog(PanelAdmin.this);
+            if (userSelection == JFileChooser.APPROVE_OPTION) {
+                java.io.File fileToSave = fileChooser.getSelectedFile();
+                try (java.io.FileWriter fw = new java.io.FileWriter(fileToSave)) {
+                    if (seleccion == 0) {
+                        // Exportar como .txt visual
+                        StringBuilder txt = new StringBuilder();
+                        txt.append("RESULTADOS DE LA VOTACIÓN\n=========================\n\n");
+                        // Encabezado tabla
+                        txt.append(String.format("%-4s %-15s %-15s %-7s %-10s\n", "N°", "Nombre", "Partido", "Votos", "Porcentaje"));
+                        for (int i = 0; i < modeloTablaResultados.getRowCount(); i++) {
+                            txt.append(String.format("%-4s %-15s %-15s %-7s %-9.2f%%\n",
+                                modeloTablaResultados.getValueAt(i, 0),
+                                modeloTablaResultados.getValueAt(i, 1),
+                                modeloTablaResultados.getValueAt(i, 2),
+                                modeloTablaResultados.getValueAt(i, 3),
+                                (double)modeloTablaResultados.getValueAt(i, 4)));
+                        }
+                        txt.append("\n").append(txtResultados.getText());
+                        fw.write(txt.toString());
+                    } else if (seleccion == 1) {
+                        // Exportar como .csv
+                        StringBuilder csv = new StringBuilder();
+                        csv.append("Numero,Nombre,Partido,Votos,Porcentaje\n");
+                        for (int i = 0; i < modeloTablaResultados.getRowCount(); i++) {
+                            csv.append(String.format("%s,%s,%s,%s,%.2f%%\n",
+                                modeloTablaResultados.getValueAt(i, 0),
+                                modeloTablaResultados.getValueAt(i, 1),
+                                modeloTablaResultados.getValueAt(i, 2),
+                                modeloTablaResultados.getValueAt(i, 3),
+                                (double)modeloTablaResultados.getValueAt(i, 4)));
+                        }
+                        fw.write(csv.toString());
+                    }
+                    JOptionPane.showMessageDialog(PanelAdmin.this, "Resultados exportados correctamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(PanelAdmin.this, "Error al exportar resultados: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        });
+
+        btnCerrarSesion.addActionListener(e -> {
+            dispose();
+            new VentanaSeleccionRol().setVisible(true);
         });
     }
 
@@ -267,12 +471,48 @@ public class PanelAdmin extends JFrame {
         sb.append("=========================\n\n");
         int totalVotos = 0;
         for (Candidato c : candidatos) {
-            sb.append("Candidato ").append(c.getNumero()).append(": ").append(c.getNombre()).append(" (").append(c.getPartido()).append(")\n");
-            sb.append("Votos: ").append(c.getVotos()).append("\n");
-            sb.append("------------------------\n");
             totalVotos += c.getVotos();
         }
-        sb.append("\nTotal de votos emitidos: ").append(totalVotos).append("\n");
+        // Actualizar tabla
+        modeloTablaResultados.setRowCount(0);
+        int maxVotos = -1;
+        for (Candidato c : candidatos) {
+            if (c.getVotos() > maxVotos) maxVotos = c.getVotos();
+        }
+        for (Candidato c : candidatos) {
+            double porcentaje = totalVotos > 0 ? (c.getVotos() * 100.0 / totalVotos) : 0.0;
+            modeloTablaResultados.addRow(new Object[]{c.getNumero(), c.getNombre(), c.getPartido(), c.getVotos(), porcentaje});
+        }
+        sb.append("\nTotal de votos emitidos: ").append(totalVotos).append("\n\n");
+
+        // Mostrar ganador o empate solo si la votación está finalizada (botón Finalizar Votación)
+        if (!btnFinalizarVotacion.isEnabled()) {
+            // Buscar candidatos con máximo de votos
+            List<Candidato> ganadores = new java.util.ArrayList<>();
+            for (Candidato c : candidatos) {
+                if (c.getVotos() == maxVotos && maxVotos > 0) {
+                    ganadores.add(c);
+                }
+            }
+            if (ganadores.size() == 1) {
+                Candidato ganador = ganadores.get(0);
+                double porcentajeGanador = totalVotos > 0 ? (ganador.getVotos() * 100.0 / totalVotos) : 0.0;
+                sb.append("\nGANADOR: ").append(ganador.getNombre()).append(" (").append(ganador.getPartido()).append(") con ")
+                  .append(ganador.getVotos()).append(" votos (" + String.format("%.2f", porcentajeGanador) + "%)\n");
+            } else if (ganadores.size() > 1) {
+                sb.append("\nEMPATE entre: ");
+                for (int i = 0; i < ganadores.size(); i++) {
+                    Candidato emp = ganadores.get(i);
+                    double porcentajeEmp = totalVotos > 0 ? (emp.getVotos() * 100.0 / totalVotos) : 0.0;
+                    sb.append(emp.getNombre()).append(" (").append(emp.getVotos()).append(" votos, ")
+                      .append(String.format("%.2f", porcentajeEmp)).append("%)");
+                    if (i < ganadores.size() - 1) sb.append(", ");
+                }
+                sb.append("\n");
+            } else {
+                sb.append("\nNo hay votos registrados.\n");
+            }
+        }
         txtResultados.setText(sb.toString());
     }
 
@@ -346,5 +586,20 @@ class RoundedPanel extends JPanel {
 
         super.paintComponent(g);
         g2.dispose();
+    }
+}
+
+// ProgressBarRenderer para la columna de porcentaje
+class ProgressBarRenderer extends JProgressBar implements TableCellRenderer {
+    public ProgressBarRenderer() {
+        super(0, 100);
+        setStringPainted(true);
+    }
+    @Override
+    public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+        double porcentaje = (double) value;
+        setValue((int) porcentaje);
+        setString(String.format("%.2f%%", porcentaje));
+        return this;
     }
 }
