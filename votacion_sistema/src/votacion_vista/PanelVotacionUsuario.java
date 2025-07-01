@@ -10,11 +10,33 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.List;
 
+/**
+ * Vista del panel de votación para usuarios.
+ * Permite al usuario autenticado seleccionar un candidato y emitir su voto.
+ * Se comunica con la base de datos a través de la lógica del controlador.
+ * @author Sistema de Votación
+ * @version 2.0
+ */
 public class PanelVotacionUsuario extends JFrame {
+    /** Usuario autenticado que realiza la votación */
     private Usuario usuario;
+    /** ComboBox para seleccionar candidato */
     private JComboBox<Candidato> comboCandidatos;
+    /** Botón para emitir el voto */
     private JButton btnVotar;
+    /**
+     * Grupo de botones de radio para los candidatos.
+     */
+    private ButtonGroup grupoCandidatos;
+    /**
+     * Etiqueta para mostrar mensajes al usuario.
+     */
+    private JLabel lblMensaje;
 
+    /**
+     * Constructor del panel de votación de usuario.
+     * @param usuario Usuario autenticado
+     */
     public PanelVotacionUsuario(Usuario usuario) {
         this.usuario = usuario;
         setTitle("Panel de Usuario - Votación");
@@ -32,6 +54,9 @@ public class PanelVotacionUsuario extends JFrame {
         cargarCandidatos();
     }
 
+    /**
+     * Inicializa los componentes visuales del panel.
+     */
     private void inicializarComponentes() {
         comboCandidatos = new JComboBox<>();
         comboCandidatos.setFont(new Font("Segoe UI", Font.PLAIN, 15));
@@ -73,8 +98,25 @@ public class PanelVotacionUsuario extends JFrame {
                 btnVotar.setBackground(new Color(46, 204, 113));
             }
         });
+
+        grupoCandidatos = new ButtonGroup();
+        for (Candidato candidato : ConexionDB.obtenerCandidatos()) {
+            JRadioButton radio = new JRadioButton(candidato.getNombre());
+            radio.setFont(new Font("Segoe UI", Font.PLAIN, 18));
+            radio.setActionCommand(String.valueOf(candidato.getNumero()));
+            radio.setOpaque(false);
+            grupoCandidatos.add(radio);
+            comboCandidatos.addItem(candidato);
+        }
+
+        lblMensaje = new JLabel(" ", JLabel.CENTER);
+        lblMensaje.setFont(new Font("Segoe UI", Font.ITALIC, 14));
+        lblMensaje.setForeground(new Color(52, 73, 94));
     }
 
+    /**
+     * Configura el layout y la disposición de los componentes.
+     */
     private void configurarLayout() {
         JPanel panelCentral = new JPanel() {
             @Override
@@ -145,8 +187,19 @@ public class PanelVotacionUsuario extends JFrame {
         // Centrado vertical y horizontal
         setLayout(new GridBagLayout());
         add(panelCentral);
+
+        // Panel inferior con mensaje
+        JPanel panelInferior = new JPanel(new BorderLayout());
+        panelInferior.setOpaque(false);
+        panelInferior.add(lblMensaje, BorderLayout.SOUTH);
+        panelInferior.setBorder(BorderFactory.createEmptyBorder(10, 40, 20, 40));
+        add(panelInferior, BorderLayout.SOUTH);
     }
 
+    /**
+     * Agrega los listeners y acciones al botón de votar.
+     * Valida el voto, actualiza el estado y muestra mensajes.
+     */
     private void agregarEventos() {
         btnVotar.addActionListener(new ActionListener() {
             @Override
@@ -178,6 +231,9 @@ public class PanelVotacionUsuario extends JFrame {
         });
     }
 
+    /**
+     * Carga la lista de candidatos desde la base de datos y los muestra en el ComboBox.
+     */
     private void cargarCandidatos() {
         comboCandidatos.removeAllItems();
         List<Candidato> candidatos = ConexionDB.obtenerCandidatos();
@@ -186,7 +242,9 @@ public class PanelVotacionUsuario extends JFrame {
         }
     }
 
-    // Panel con fondo gradiente
+    /**
+     * Clase interna para el fondo gradiente del panel.
+     */
     class PanelGradiente extends JPanel {
         @Override
         protected void paintComponent(Graphics g) {
@@ -200,5 +258,33 @@ public class PanelVotacionUsuario extends JFrame {
             g2d.setPaint(gp);
             g2d.fillRect(0, 0, w, h);
         }
+    }
+
+    /**
+     * Obtiene el ID del candidato seleccionado por el usuario.
+     * @return ID del candidato seleccionado, o -1 si no hay selección.
+     */
+    public int getCandidatoSeleccionadoId() {
+        ButtonModel seleccionado = grupoCandidatos.getSelection();
+        if (seleccionado != null) {
+            return Integer.parseInt(seleccionado.getActionCommand());
+        }
+        return -1;
+    }
+
+    /**
+     * Muestra un mensaje informativo al usuario.
+     * @param mensaje Texto del mensaje.
+     */
+    public void mostrarMensaje(String mensaje) {
+        lblMensaje.setText(mensaje);
+    }
+
+    /**
+     * Habilita o deshabilita el botón de votar.
+     * @param habilitado true para habilitar, false para deshabilitar.
+     */
+    public void setBotonVotarHabilitado(boolean habilitado) {
+        btnVotar.setEnabled(habilitado);
     }
 }

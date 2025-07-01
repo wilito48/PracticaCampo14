@@ -12,9 +12,11 @@ import votacion_modelo.Usuario;
 import votacion_modelo.Candidato;
 
 /**
- * Clase para manejar la conexión y operaciones con la base de datos MySQL
+ * Clase para manejar la conexión y operaciones con la base de datos MySQL.
+ * Proporciona métodos para conectar, desconectar, crear tablas y realizar operaciones CRUD
+ * sobre usuarios, candidatos y votos en el sistema de votación.
  * @author Sistema de Votación
- * @version 1.0
+ * @version 2.0
  */
 public class ConexionDB {
     private static final String URL = "jdbc:mysql://localhost:3306/sistema_votacion";
@@ -23,7 +25,8 @@ public class ConexionDB {
     private static Connection conexion;
     
     /**
-     * Establece la conexión con la base de datos
+     * Establece la conexión con la base de datos.
+     * Carga el driver, conecta y crea las tablas si no existen.
      * @return true si la conexión fue exitosa, false en caso contrario
      */
     public static boolean conectar() {
@@ -50,7 +53,7 @@ public class ConexionDB {
     }
     
     /**
-     * Cierra la conexión con la base de datos
+     * Cierra la conexión con la base de datos si está abierta.
      */
     public static void desconectar() {
         try {
@@ -63,7 +66,8 @@ public class ConexionDB {
     }
     
     /**
-     * Crea las tablas necesarias si no existen
+     * Crea las tablas necesarias (usuarios, candidatos, votos) si no existen.
+     * Solo debe llamarse internamente al conectar.
      */
     private static void crearTablas() {
         try {
@@ -122,7 +126,7 @@ public class ConexionDB {
     // ========== MÉTODOS PARA USUARIOS ==========
     
     /**
-     * Registra un nuevo usuario en la base de datos
+     * Registra un nuevo usuario en la base de datos.
      * @param usuario Usuario a registrar
      * @return true si se registró correctamente, false en caso contrario
      */
@@ -150,7 +154,7 @@ public class ConexionDB {
     }
     
     /**
-     * Autentica un usuario por email y contraseña
+     * Autentica un usuario por email y contraseña.
      * @param email Email del usuario
      * @param password Contraseña del usuario
      * @return Usuario autenticado o null si falla la autenticación
@@ -193,7 +197,7 @@ public class ConexionDB {
     }
     
     /**
-     * Verifica si un email ya está registrado
+     * Verifica si un email ya está registrado en la base de datos.
      * @param email Email a verificar
      * @return true si el email ya existe, false en caso contrario
      */
@@ -223,7 +227,7 @@ public class ConexionDB {
     }
     
     /**
-     * Verifica si un DNI ya está registrado
+     * Verifica si un DNI ya está registrado en la base de datos.
      * @param dni DNI a verificar
      * @return true si el DNI ya existe, false en caso contrario
      */
@@ -253,7 +257,7 @@ public class ConexionDB {
     }
     
     /**
-     * Marca que un usuario ya votó
+     * Marca que un usuario ha votado en la elección actual.
      * @param usuarioId ID del usuario
      * @return true si se actualizó correctamente, false en caso contrario
      */
@@ -278,7 +282,7 @@ public class ConexionDB {
     // ========== MÉTODOS PARA CANDIDATOS ==========
     
     /**
-     * Registra un nuevo candidato en la base de datos
+     * Registra un nuevo candidato en la base de datos.
      * @param candidato Candidato a registrar
      * @return true si se registró correctamente, false en caso contrario
      */
@@ -303,7 +307,7 @@ public class ConexionDB {
     }
     
     /**
-     * Obtiene todos los candidatos de la base de datos
+     * Obtiene la lista de candidatos registrados en la base de datos.
      * @return Lista de candidatos
      */
     public static List<Candidato> obtenerCandidatos() {
@@ -335,10 +339,10 @@ public class ConexionDB {
     }
     
     /**
-     * Registra un voto para un candidato
+     * Registra un voto de un usuario para un candidato.
      * @param candidatoId ID del candidato
-     * @param usuarioId ID del usuario que vota
-     * @return true si se registró correctamente, false en caso contrario
+     * @param usuarioId ID del usuario
+     * @return true si el voto se registró correctamente, false en caso contrario
      */
     public static boolean registrarVoto(int candidatoId, int usuarioId) {
         try {
@@ -382,9 +386,9 @@ public class ConexionDB {
     }
     
     /**
-     * Obtiene el ID de un candidato por su número
+     * Obtiene el ID de un candidato a partir de su número único.
      * @param numero Número del candidato
-     * @return ID del candidato o -1 si no existe
+     * @return ID del candidato, o -1 si no se encuentra
      */
     public static int obtenerIdCandidato(int numero) {
         try {
@@ -412,7 +416,7 @@ public class ConexionDB {
     }
     
     /**
-     * Reinicia todos los votos (para nueva elección)
+     * Reinicia la cantidad de votos de todos los candidatos a cero.
      */
     public static void reiniciarVotos() {
         try {
@@ -431,6 +435,11 @@ public class ConexionDB {
             System.err.println("Error al reiniciar votos: " + e.getMessage());
         }
     }
+    
+    /**
+     * Obtiene la lista de usuarios registrados en la base de datos.
+     * @return Lista de usuarios
+     */
     public static List<Usuario> obtenerUsuarios() {
         List<Usuario> usuarios = new ArrayList<>();
         try {

@@ -14,15 +14,32 @@ import javax.swing.Timer;
 import javax.swing.JFileChooser;
 import javax.swing.table.*;
 
+/**
+ * Vista principal del panel de administración.
+ * Permite al administrador gestionar candidatos, usuarios, controlar la votación y exportar resultados.
+ * Se comunica con el controlador para la lógica de negocio.
+ * @author Sistema de Votación
+ * @version 2.0
+ */
 public class PanelAdmin extends JFrame {
+    /** Usuario administrador autenticado */
     private Usuario admin;
+    // Campos de registro de candidato
     private JTextField txtNumero, txtNombre, txtPartido;
+    // Botones de acciones principales
     private JButton btnRegistrarCandidato, btnIniciarVotacion, btnFinalizarVotacion, btnVerUsuarios, btnVerCandidatos, btnReiniciarVotacion, btnExportarResultados, btnCerrarSesion;
+    // Áreas de texto para mostrar información
     private JTextArea txtResultados, txtUsuarios, txtCandidatos;
+    // Tabla para mostrar resultados visuales
     private JTable tablaResultados;
     private DefaultTableModel modeloTablaResultados;
+    // Controlador para la lógica de negocio
     private ControladorPanelAdmin controlador;
 
+    /**
+     * Constructor del panel de administración.
+     * @param admin Usuario administrador autenticado
+     */
     public PanelAdmin(Usuario admin) {
         this.admin = admin;
         setTitle("Panel de Administrador");
@@ -39,6 +56,9 @@ public class PanelAdmin extends JFrame {
         timerResultados.start();
     }
 
+    /**
+     * Inicializa los componentes visuales del panel.
+     */
     private void inicializarComponentes() {
         txtNumero = new JTextField();
         txtNumero.setPreferredSize(new Dimension(60, 25));
@@ -136,6 +156,9 @@ public class PanelAdmin extends JFrame {
         tablaResultados.getColumnModel().getColumn(4).setCellRenderer(new ProgressBarRenderer());
     }
 
+    /**
+     * Configura el layout y la disposición de los paneles y componentes.
+     */
     private void configurarLayout() {
         GradientPanel mainPanel = new GradientPanel();
         mainPanel.setLayout(new BorderLayout(18, 18));
@@ -333,6 +356,10 @@ public class PanelAdmin extends JFrame {
         });
     }
 
+    /**
+     * Agrega los listeners y acciones a los botones principales.
+     * Cada acción delega la lógica al controlador y actualiza la UI según el resultado.
+     */
     private void agregarEventos() {
         btnRegistrarCandidato.addActionListener(new ActionListener() {
             @Override
@@ -415,6 +442,9 @@ public class PanelAdmin extends JFrame {
         });
     }
 
+    /**
+     * Muestra los resultados de la votación en la tabla y área de texto.
+     */
     private void mostrarResultados() {
         List<Candidato> candidatos = ConexionDB.obtenerCandidatos();
         StringBuilder sb = new StringBuilder();

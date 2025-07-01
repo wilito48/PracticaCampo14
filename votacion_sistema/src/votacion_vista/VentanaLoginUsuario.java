@@ -10,6 +10,13 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import javax.swing.text.*;
 
+/**
+ * Vista de la ventana de login y registro para usuarios.
+ * Permite a los usuarios autenticarse o registrarse en el sistema.
+ * Se comunica con el controlador para la lógica de negocio.
+ * @author Sistema de Votación
+ * @version 2.0
+ */
 public class VentanaLoginUsuario extends JFrame {
     // Campos para login
     private JTextField txtEmailLogin;
@@ -28,6 +35,9 @@ public class VentanaLoginUsuario extends JFrame {
 
     private ControladorLoginUsuario controlador;
 
+    /**
+     * Constructor de la ventana de login/registro de usuario.
+     */
     public VentanaLoginUsuario() {
         setTitle("Login Usuario");
         setSize(420, 400);
@@ -40,6 +50,9 @@ public class VentanaLoginUsuario extends JFrame {
         agregarEventos();
     }
 
+    /**
+     * Inicializa los componentes visuales de la ventana.
+     */
     private void inicializarComponentes() {
         // Login
         txtEmailLogin = new JTextField(20);
@@ -87,6 +100,9 @@ public class VentanaLoginUsuario extends JFrame {
         panelContenedor = new JPanel(cardLayout);
     }
 
+    /**
+     * Configura el layout y la disposición de los paneles y componentes.
+     */
     private void configurarLayout() {
         // Panel de login moderno
         JPanel panelLoginCentral = new JPanel() {
@@ -280,6 +296,10 @@ public class VentanaLoginUsuario extends JFrame {
         });
     }
 
+    /**
+     * Agrega los listeners y acciones a los botones de login y registro.
+     * Valida los campos, llama al controlador y muestra mensajes según el resultado.
+     */
     private void agregarEventos() {
         btnLogin.addActionListener(new ActionListener() {
             @Override

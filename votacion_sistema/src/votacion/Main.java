@@ -6,10 +6,19 @@ import votacion_util.ConexionDB;
 import javax.swing.*;
 import java.awt.Color;
 
+/**
+ * Clase principal del sistema de votación electrónica.
+ * Inicializa la aplicación, configura la apariencia, conecta con la base de datos
+ * y lanza la ventana de selección de rol para el usuario.
+ * Incluye utilidades para mostrar información del sistema y personalizar la interfaz.
+ * @author Sistema de Votación
+ * @version 2.0
+ */
 public class Main {
     
     /**
-     * Método principal de la aplicación
+     * Método principal de la aplicación. Configura el look and feel, conecta a la base de datos
+     * y lanza la ventana principal de selección de rol.
      * @param args Argumentos de línea de comandos
      */
 	public static void main(String[] args) {
@@ -48,7 +57,8 @@ public class Main {
 	}
     
     /**
-     * Conecta con la base de datos MySQL
+     * Intenta conectar con la base de datos MySQL.
+     * Muestra mensajes de error claros si la conexión falla.
      * @return true si la conexión fue exitosa, false en caso contrario
      */
     private static boolean conectarBaseDatos() {
@@ -101,7 +111,8 @@ public class Main {
     }
     
     /**
-     * Configura estilos personalizados para la aplicación
+     * Configura estilos y colores personalizados para la interfaz gráfica.
+     * Personaliza botones, paneles, campos de texto, menús y etiquetas.
      */
     private static void configurarEstilosPersonalizados() {
         // Configurar colores de la interfaz
@@ -134,7 +145,8 @@ public class Main {
     }
     
     /**
-     * Método para verificar la versión de Java
+     * (Opcional) Verifica y muestra información sobre la versión de Java y el sistema operativo.
+     * Útil para depuración y soporte técnico.
      */
     private static void verificarVersionJava() {
         String version = System.getProperty("java.version");
@@ -149,7 +161,9 @@ public class Main {
     }
     
     /**
-     * Método para mostrar información del sistema
+     * Muestra información detallada del sistema en un cuadro de diálogo.
+     * Incluye versión de Java, SO, usuario, memoria, etc.
+     * Útil para soporte y depuración.
      */
     public static void mostrarInformacionSistema() {
         StringBuilder info = new StringBuilder();

@@ -9,7 +9,18 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
 
+/**
+ * Controlador encargado de la lógica de administración (panel de admin).
+ * Gestiona candidatos, votación, exportación de resultados y obtención de datos.
+ * Separa la lógica de negocio de la vista (PanelAdmin).
+ * @author Sistema de Votación
+ * @version 2.0
+ */
 public class ControladorPanelAdmin {
+    /**
+     * Clase interna para encapsular el resultado de una operación administrativa.
+     * Incluye si fue exitosa y un mensaje para la vista.
+     */
     public static class ResultadoOperacion {
         public final boolean exito;
         public final String mensaje;
@@ -19,6 +30,13 @@ public class ControladorPanelAdmin {
         }
     }
 
+    /**
+     * Registra un nuevo candidato, validando duplicados y campos vacíos.
+     * @param numero Número identificador
+     * @param nombre Nombre
+     * @param partido Partido
+     * @return ResultadoOperacion con éxito y mensaje
+     */
     public ResultadoOperacion registrarCandidato(int numero, String nombre, String partido) {
         if (nombre == null || nombre.trim().isEmpty() || partido == null || partido.trim().isEmpty()) {
             return new ResultadoOperacion(false, "Complete todos los campos.");
@@ -40,6 +58,10 @@ public class ControladorPanelAdmin {
         }
     }
 
+    /**
+     * Inicia la votación, validando que haya candidatos registrados.
+     * @return ResultadoOperacion con éxito y mensaje
+     */
     public ResultadoOperacion iniciarVotacion() {
         List<Candidato> candidatosExistentes = ConexionDB.obtenerCandidatos();
         if (candidatosExistentes.isEmpty()) {
@@ -48,15 +70,29 @@ public class ControladorPanelAdmin {
         return new ResultadoOperacion(true, "¡Votación iniciada! Los usuarios ya pueden votar.");
     }
 
+    /**
+     * Finaliza la votación.
+     * @return ResultadoOperacion con éxito y mensaje
+     */
     public ResultadoOperacion finalizarVotacion() {
         return new ResultadoOperacion(true, "¡Votación finalizada!");
     }
 
+    /**
+     * Reinicia la votación, borrando todos los votos actuales.
+     * @return ResultadoOperacion con éxito y mensaje
+     */
     public ResultadoOperacion reiniciarVotacion() {
         ConexionDB.reiniciarVotos();
         return new ResultadoOperacion(true, "¡Nueva votación iniciada! Todos los usuarios pueden votar de nuevo.");
     }
 
+    /**
+     * Exporta los resultados a un archivo (txt o csv).
+     * @param contenido Contenido a exportar
+     * @param archivo Archivo destino
+     * @return ResultadoOperacion con éxito y mensaje
+     */
     public ResultadoOperacion exportarResultados(String contenido, File archivo) {
         try (FileWriter writer = new FileWriter(archivo)) {
             writer.write(contenido);
@@ -66,10 +102,18 @@ public class ControladorPanelAdmin {
         }
     }
 
+    /**
+     * Obtiene la lista de candidatos desde la base de datos.
+     * @return Lista de candidatos
+     */
     public List<Candidato> obtenerCandidatos() {
         return ConexionDB.obtenerCandidatos();
     }
 
+    /**
+     * Obtiene la lista de usuarios desde la base de datos.
+     * @return Lista de usuarios
+     */
     public List<Usuario> obtenerUsuarios() {
         return ConexionDB.obtenerUsuarios();
     }

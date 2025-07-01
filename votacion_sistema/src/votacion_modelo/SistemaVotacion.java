@@ -3,16 +3,18 @@ package votacion_modelo;
 import java.util.ArrayList;
 import java.util.List;
 
-
-
 /**
- * Clase principal que maneja toda la lógica del sistema de votación
+ * Clase principal que maneja toda la lógica del sistema de votación en memoria.
+ * Permite registrar candidatos, iniciar/finalizar votación, registrar votos, obtener resultados, etc.
  * @author Sistema de Votación
- * @version 1.0
+ * @version 2.0
  */
 public class SistemaVotacion {
+    /** Lista de candidatos registrados en la elección */
     private List<Candidato> candidatos;
+    /** Total de votos emitidos en la elección */
     private int totalVotos;
+    /** Indica si la votación está activa */
     private boolean votacionActiva;
     
     /**
@@ -38,14 +40,13 @@ public class SistemaVotacion {
                 return false;
             }
         }
-        
         Candidato nuevoCandidato = new Candidato(numero, nombre, partido);
         candidatos.add(nuevoCandidato);
         return true;
     }
     
     /**
-     * Inicia el proceso de votación
+     * Inicia el proceso de votación. Reinicia los votos de todos los candidatos.
      */
     public void iniciarVotacion() {
         this.votacionActiva = true;
@@ -66,13 +67,12 @@ public class SistemaVotacion {
     /**
      * Registra un voto para un candidato específico
      * @param numeroCandidato Número del candidato por el cual votar
-     * @return true si el voto se registró correctamente, false si el candidato no existe
+     * @return true si el voto se registró correctamente, false si el candidato no existe o la votación no está activa
      */
     public boolean registrarVoto(int numeroCandidato) {
         if (!votacionActiva) {
             return false;
         }
-        
         for (Candidato candidato : candidatos) {
             if (candidato.getNumero() == numeroCandidato) {
                 candidato.agregarVoto();
@@ -85,7 +85,7 @@ public class SistemaVotacion {
     
     /**
      * Obtiene la lista de todos los candidatos
-     * @return Lista de candidatos
+     * @return Lista de candidatos (copia para evitar modificaciones externas)
      */
     public List<Candidato> getCandidatos() {
         return new ArrayList<>(candidatos);
@@ -129,17 +129,14 @@ public class SistemaVotacion {
         if (candidatos.isEmpty() || totalVotos == 0) {
             return null;
         }
-        
         Candidato ganador = candidatos.get(0);
         int maxVotos = ganador.getVotos();
-        
         for (Candidato candidato : candidatos) {
             if (candidato.getVotos() > maxVotos) {
                 ganador = candidato;
                 maxVotos = candidato.getVotos();
             }
         }
-        
         // Verificar si hay empate
         int candidatosConMaxVotos = 0;
         for (Candidato candidato : candidatos) {
@@ -147,12 +144,10 @@ public class SistemaVotacion {
                 candidatosConMaxVotos++;
             }
         }
-        
         // Si hay más de un candidato con el máximo de votos, hay empate
         if (candidatosConMaxVotos > 1) {
             return null; // Empate
         }
-        
         return ganador;
     }
     
@@ -170,11 +165,9 @@ public class SistemaVotacion {
      */
     public List<Candidato> getCandidatosEmpatados() {
         List<Candidato> empatados = new ArrayList<>();
-        
         if (candidatos.isEmpty() || totalVotos == 0) {
             return empatados;
         }
-        
         // Encontrar el máximo número de votos
         int maxVotos = 0;
         for (Candidato candidato : candidatos) {
@@ -182,14 +175,12 @@ public class SistemaVotacion {
                 maxVotos = candidato.getVotos();
             }
         }
-        
         // Agregar todos los candidatos con el máximo de votos
         for (Candidato candidato : candidatos) {
             if (candidato.getVotos() == maxVotos) {
                 empatados.add(candidato);
             }
         }
-        
         return empatados;
     }
     
@@ -200,30 +191,26 @@ public class SistemaVotacion {
      */
     public double calcularPorcentajeCandidato(int numeroCandidato) {
         Candidato candidato = getCandidatoPorNumero(numeroCandidato);
-        if (candidato == null) {
+        if (candidato == null || totalVotos == 0) {
             return -1;
         }
-        return candidato.calcularPorcentaje(totalVotos);
+        return (double) candidato.getVotos() / totalVotos * 100;
     }
     
     /**
-     * Obtiene estadísticas completas de la votación
-     * @return String con las estadísticas formateadas
+     * Devuelve una cadena con estadísticas de la votación
+     * @return Estadísticas en formato texto
      */
     public String obtenerEstadisticas() {
-        StringBuilder estadisticas = new StringBuilder();
-        estadisticas.append("=== ESTADÍSTICAS DE LA VOTACIÓN ===\n");
-        estadisticas.append("Total de votos emitidos: ").append(totalVotos).append("\n");
-        estadisticas.append("Total de candidatos: ").append(candidatos.size()).append("\n\n");
-        
-        for (Candidato candidato : candidatos) {
-            double porcentaje = candidato.calcularPorcentaje(totalVotos);
-            estadisticas.append(String.format("Candidato #%d: %s (%s)\n", 
-                candidato.getNumero(), candidato.getNombre(), candidato.getPartido()));
-            estadisticas.append(String.format("  Votos: %d (%.2f%%)\n", 
-                candidato.getVotos(), porcentaje));
+        StringBuilder sb = new StringBuilder();
+        sb.append("ESTADÍSTICAS DE LA VOTACIÓN\n");
+        sb.append("===========================\n");
+        sb.append("Total de votos emitidos: ").append(totalVotos).append("\n");
+        for (Candidato c : candidatos) {
+            sb.append("Candidato #").append(c.getNumero()).append(": ")
+              .append(c.getNombre()).append(" (" + c.getPartido() + ") - Votos: ")
+              .append(c.getVotos()).append(" (" + String.format("%.2f", calcularPorcentajeCandidato(c.getNumero())) + "%)\n");
         }
-        
-        return estadisticas.toString();
+        return sb.toString();
     }
 } 

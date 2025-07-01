@@ -9,12 +9,26 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
+/**
+ * Vista de la ventana de login para administradores.
+ * Permite al administrador autenticarse para acceder al panel de administración.
+ * Se comunica con el controlador para la lógica de negocio.
+ * @author Sistema de Votación
+ * @version 2.0
+ */
 public class VentanaLoginAdmin extends JFrame {
+    /** Campo de texto para el email del admin */
     private JTextField txtEmail;
+    /** Campo de texto para la contraseña del admin */
     private JPasswordField txtPassword;
+    /** Botón para iniciar sesión */
     private JButton btnLogin;
+    /** Controlador para la lógica de login (inyectado o instanciado en el constructor) */
     private ControladorLoginAdmin controlador;
 
+    /**
+     * Constructor de la ventana de login de administrador.
+     */
     public VentanaLoginAdmin() {
         setTitle("Login Administrador");
         setSize(420, 400);
@@ -31,6 +45,9 @@ public class VentanaLoginAdmin extends JFrame {
         agregarEventos();
     }
 
+    /**
+     * Inicializa los componentes visuales de la ventana.
+     */
     private void inicializarComponentes() {
         txtEmail = new JTextField(20);
         txtPassword = new JPasswordField(20);
@@ -44,6 +61,9 @@ public class VentanaLoginAdmin extends JFrame {
         btnLogin.setPreferredSize(new Dimension(180, 44)); // Opcional, para ancho fijo
     }
 
+    /**
+     * Configura el layout y la disposición de los componentes.
+     */
     private void configurarLayout() {
         JPanel panelCentral = new JPanel() {
             @Override
@@ -136,6 +156,10 @@ public class VentanaLoginAdmin extends JFrame {
         add(panelCentral);
     }
 
+    /**
+     * Agrega el listener al botón de login.
+     * Valida los campos, llama al controlador y muestra mensajes según el resultado.
+     */
     private void agregarEventos() {
         btnLogin.addActionListener(new ActionListener() {
             @Override
@@ -159,7 +183,9 @@ public class VentanaLoginAdmin extends JFrame {
         });
     }
 
-    // Panel con fondo gradiente
+    /**
+     * Clase interna para el fondo gradiente de la ventana.
+     */
     class PanelGradiente extends JPanel {
         @Override
         protected void paintComponent(Graphics g) {
