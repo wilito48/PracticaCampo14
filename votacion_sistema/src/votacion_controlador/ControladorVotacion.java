@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * Controlador que maneja la lógica de negocio entre la vista y el modelo
  * @author Sistema de Votación
- * @version 1.0
+ * @version 2.0
  */
 public class ControladorVotacion {
     

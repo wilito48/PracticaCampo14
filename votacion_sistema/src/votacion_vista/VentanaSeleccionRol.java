@@ -9,24 +9,31 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 
 /**
- * Ventana para seleccionar el tipo de acceso (Admin o Usuario)
- * Mejorada visualmente con gradientes, iconos y efectos modernos.
+ * Vista de la ventana de selección de rol.
+ * Permite al usuario elegir entre acceso de administrador o usuario.
+ * Solo gestiona la navegación a las ventanas de login correspondientes.
+ * @author Sistema de Votación
+ * @version 2.0
  */
 public class VentanaSeleccionRol extends JFrame {
-
+    /**
+     * Constructor de la ventana de selección de rol.
+     */
     public VentanaSeleccionRol() {
         inicializarVentana();
         inicializarComponentes();
         configurarLayout();
     }
 
+    /**
+     * Inicializa las propiedades principales de la ventana.
+     */
     private void inicializarVentana() {
         setTitle("Sistema de Votación - Selección de Acceso");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(520, 430);
         setLocationRelativeTo(null);
         setResizable(false);
-
         // Configurar icono
         try {
             setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/icono.png")));
@@ -35,27 +42,33 @@ public class VentanaSeleccionRol extends JFrame {
         }
     }
 
+    /**
+     * Inicializa los componentes visuales de la ventana.
+     */
     private void inicializarComponentes() {
         // Los componentes se crean en configurarLayout()
     }
 
+    /**
+     * Configura el layout y la disposición de los paneles y componentes.
+     */
     private void configurarLayout() {
         setContentPane(new PanelGradiente());
         setLayout(new BorderLayout());
-
         // Panel superior con título
         JPanel panelTitulo = crearPanelTitulo();
         add(panelTitulo, BorderLayout.NORTH);
-
         // Panel central con botones
         JPanel panelCentral = crearPanelCentral();
         add(panelCentral, BorderLayout.CENTER);
-
         // Panel inferior con información
         JPanel panelInferior = crearPanelInferior();
         add(panelInferior, BorderLayout.SOUTH);
     }
 
+    /**
+     * Crea el panel superior con el título y subtítulo.
+     */
     private JPanel crearPanelTitulo() {
         JPanel panel = new JPanel();
         panel.setOpaque(false);

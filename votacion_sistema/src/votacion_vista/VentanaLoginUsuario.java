@@ -2,12 +2,21 @@ package votacion_vista;
 
 import votacion_util.ConexionDB;
 import votacion_modelo.Usuario;
+import votacion_controlador.ControladorLoginUsuario;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import javax.swing.text.*;
 
+/**
+ * Vista de la ventana de login y registro para usuarios.
+ * Permite a los usuarios autenticarse o registrarse en el sistema.
+ * Se comunica con el controlador para la lógica de negocio.
+ * @author Sistema de Votación
+ * @version 2.0
+ */
 public class VentanaLoginUsuario extends JFrame {
     // Campos para login
     private JTextField txtEmailLogin;
@@ -19,20 +28,31 @@ public class VentanaLoginUsuario extends JFrame {
     private JPasswordField txtPasswordRegistro, txtPasswordConfirm;
     private JButton btnRegistrar;
 
-    private JTabbedPane tabbedPane;
+    private JPanel panelContenedor;
+    private CardLayout cardLayout;
+    private static final String LOGIN = "login";
+    private static final String REGISTRO = "registro";
 
+    private ControladorLoginUsuario controlador;
+
+    /**
+     * Constructor de la ventana de login/registro de usuario.
+     */
     public VentanaLoginUsuario() {
         setTitle("Login Usuario");
-        setSize(420, 350);
+        setSize(420, 400);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setResizable(false);
-
+        controlador = new ControladorLoginUsuario();
         inicializarComponentes();
         configurarLayout();
         agregarEventos();
     }
 
+    /**
+     * Inicializa los componentes visuales de la ventana.
+     */
     private void inicializarComponentes() {
         // Login
         txtEmailLogin = new JTextField(20);
@@ -43,101 +63,259 @@ public class VentanaLoginUsuario extends JFrame {
         txtNombre = new JTextField(20);
         txtApellido = new JTextField(20);
         txtDni = new JTextField(20);
+        // Solo números y máximo 8 dígitos para DNI
+        ((AbstractDocument) txtDni.getDocument()).setDocumentFilter(new DocumentFilter() {
+            @Override
+            public void insertString(FilterBypass fb, int offset, String string, AttributeSet attr) throws BadLocationException {
+                if (string == null) return;
+                StringBuilder sb = new StringBuilder();
+                for (char c : string.toCharArray()) {
+                    if (Character.isDigit(c)) sb.append(c);
+                }
+                int newLength = fb.getDocument().getLength() + sb.length();
+                if (newLength <= 8) {
+                    super.insertString(fb, offset, sb.toString(), attr);
+                }
+            }
+            @Override
+            public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs) throws BadLocationException {
+                if (text == null) return;
+                StringBuilder sb = new StringBuilder();
+                for (char c : text.toCharArray()) {
+                    if (Character.isDigit(c)) sb.append(c);
+                }
+                int newLength = fb.getDocument().getLength() - length + sb.length();
+                if (newLength <= 8) {
+                    super.replace(fb, offset, length, sb.toString(), attrs);
+                }
+            }
+        });
         txtEmailRegistro = new JTextField(20);
         txtPasswordRegistro = new JPasswordField(20);
         txtPasswordConfirm = new JPasswordField(20);
         btnRegistrar = new JButton("Registrarse");
 
-        tabbedPane = new JTabbedPane();
+        // Panel contenedor con CardLayout
+        cardLayout = new CardLayout();
+        panelContenedor = new JPanel(cardLayout);
     }
 
+    /**
+     * Configura el layout y la disposición de los paneles y componentes.
+     */
     private void configurarLayout() {
-        // Panel de login
-        JPanel panelLogin = new JPanel(new GridBagLayout());
+        // Panel de login moderno
+        JPanel panelLoginCentral = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2 = (Graphics2D) g;
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                // Sombra
+                g2.setColor(new Color(0,0,0,30));
+                g2.fillRoundRect(8, 8, getWidth()-16, getHeight()-16, 30, 30);
+                // Fondo blanco
+                g2.setColor(new Color(255, 255, 255));
+                g2.fillRoundRect(0, 0, getWidth()-1, getHeight()-1, 25, 25);
+            }
+        };
+        panelLoginCentral.setOpaque(false);
+        panelLoginCentral.setLayout(new GridBagLayout());
+        panelLoginCentral.setBorder(BorderFactory.createEmptyBorder(20, 30, 20, 30));
+        panelLoginCentral.setPreferredSize(new Dimension(340, 320));
+
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(8, 8, 8, 8);
+        gbc.gridx = 0;
+        gbc.gridwidth = 2;
+        gbc.insets = new Insets(0, 0, 10, 0);
+        gbc.anchor = GridBagConstraints.CENTER;
 
-        gbc.gridx = 0; gbc.gridy = 0; gbc.anchor = GridBagConstraints.EAST;
-        panelLogin.add(new JLabel("Email:"), gbc);
-        gbc.gridx = 1; gbc.anchor = GridBagConstraints.WEST;
-        panelLogin.add(txtEmailLogin, gbc);
+        // Icono de usuario más pequeño
+        JLabel lblIcon = new JLabel();
+        lblIcon.setHorizontalAlignment(SwingConstants.CENTER);
+        try {
+            ImageIcon icon = new ImageIcon(getClass().getResource("/user.png"));
+            Image img = icon.getImage().getScaledInstance(48, 48, Image.SCALE_SMOOTH);
+            lblIcon.setIcon(new ImageIcon(img));
+        } catch (Exception ex) {
+            lblIcon.setText("\uD83D\uDC64");
+            lblIcon.setFont(new Font("Segoe UI", Font.PLAIN, 36));
+        }
+        lblIcon.setBorder(BorderFactory.createEmptyBorder(0,0,2,0));
+        panelLoginCentral.add(lblIcon, gbc);
 
-        gbc.gridx = 0; gbc.gridy = 1; gbc.anchor = GridBagConstraints.EAST;
-        panelLogin.add(new JLabel("Contraseña:"), gbc);
-        gbc.gridx = 1; gbc.anchor = GridBagConstraints.WEST;
-        panelLogin.add(txtPasswordLogin, gbc);
+        // Título
+        gbc.gridy = 1;
+        JLabel lblTitulo = new JLabel("Acceso Usuario");
+        lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        lblTitulo.setForeground(new Color(44, 62, 80));
+        panelLoginCentral.add(lblTitulo, gbc);
 
-        gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 2; gbc.anchor = GridBagConstraints.CENTER;
-        panelLogin.add(btnLogin, gbc);
+        // Email label
+        gbc.gridy = 2;
+        gbc.gridwidth = 2;
+        gbc.insets = new Insets(10, 0, 2, 0);
+        JLabel lblEmail = new JLabel("Email:");
+        lblEmail.setFont(new Font("Segoe UI", Font.PLAIN, 15));
+        lblEmail.setHorizontalAlignment(SwingConstants.LEFT);
+        lblEmail.setForeground(new Color(44, 62, 80));
+        panelLoginCentral.add(lblEmail, gbc);
 
-        // Panel de registro
+        // Email field
+        gbc.gridy = 3;
+        gbc.insets = new Insets(0, 0, 10, 0);
+        txtEmailLogin.setFont(new Font("Segoe UI", Font.PLAIN, 15));
+        txtEmailLogin.setPreferredSize(new Dimension(220, 36));
+        txtEmailLogin.setMinimumSize(new Dimension(220, 36));
+        txtEmailLogin.setMaximumSize(new Dimension(220, 36));
+        txtEmailLogin.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(189, 195, 199), 1, true),
+            BorderFactory.createEmptyBorder(7, 12, 7, 12)
+        ));
+        panelLoginCentral.add(txtEmailLogin, gbc);
+
+        // Password label
+        gbc.gridy = 4;
+        gbc.insets = new Insets(5, 0, 2, 0);
+        JLabel lblPass = new JLabel("Contraseña:");
+        lblPass.setFont(new Font("Segoe UI", Font.PLAIN, 15));
+        lblPass.setHorizontalAlignment(SwingConstants.LEFT);
+        lblPass.setForeground(new Color(44, 62, 80));
+        panelLoginCentral.add(lblPass, gbc);
+
+        // Password field
+        gbc.gridy = 5;
+        gbc.insets = new Insets(0, 0, 15, 0);
+        txtPasswordLogin.setFont(new Font("Segoe UI", Font.PLAIN, 15));
+        txtPasswordLogin.setPreferredSize(new Dimension(220, 36));
+        txtPasswordLogin.setMinimumSize(new Dimension(220, 36));
+        txtPasswordLogin.setMaximumSize(new Dimension(220, 36));
+        txtPasswordLogin.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(189, 195, 199), 1, true),
+            BorderFactory.createEmptyBorder(7, 12, 7, 12)
+        ));
+        panelLoginCentral.add(txtPasswordLogin, gbc);
+
+        // Botón de iniciar sesión
+        gbc.gridy = 6;
+        gbc.insets = new Insets(0, 0, 0, 0);
+        btnLogin.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        btnLogin.setBackground(new Color(52, 152, 219));
+        btnLogin.setForeground(Color.WHITE);
+        btnLogin.setFocusPainted(false);
+        btnLogin.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnLogin.setBorder(BorderFactory.createEmptyBorder(12, 24, 12, 24));
+        btnLogin.setPreferredSize(new Dimension(180, 44));
+        panelLoginCentral.add(btnLogin, gbc);
+
+        // Enlace para ir a registro (panel horizontal)
+        gbc.gridy = 7;
+        gbc.insets = new Insets(6, 0, 0, 0);
+        JPanel panelEnlace = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
+        panelEnlace.setOpaque(false);
+        JLabel lblTexto = new JLabel("¿No tienes cuenta? ");
+        lblTexto.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        JLabel lblIrRegistro = new JLabel("Regístrate");
+        lblIrRegistro.setForeground(new Color(0, 102, 204));
+        lblIrRegistro.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        lblIrRegistro.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        lblIrRegistro.setBorder(BorderFactory.createEmptyBorder(0,0,0,0));
+        // Subrayado manual
+        lblIrRegistro.setText("<html><u>Regístrate</u></html>");
+        panelEnlace.add(lblTexto);
+        panelEnlace.add(lblIrRegistro);
+        panelLoginCentral.add(panelEnlace, gbc);
+
+        // Panel de registro (diseño anterior, sencillo)
         JPanel panelRegistro = new JPanel(new GridBagLayout());
-        gbc = new GridBagConstraints();
-        gbc.insets = new Insets(6, 6, 6, 6);
+        GridBagConstraints gbcReg = new GridBagConstraints();
+        gbcReg.insets = new Insets(6, 6, 6, 6);
 
-        gbc.gridx = 0; gbc.gridy = 0; gbc.anchor = GridBagConstraints.EAST;
-        panelRegistro.add(new JLabel("Nombre:"), gbc);
-        gbc.gridx = 1; gbc.anchor = GridBagConstraints.WEST;
-        panelRegistro.add(txtNombre, gbc);
+        gbcReg.gridx = 0; gbcReg.gridy = 0; gbcReg.anchor = GridBagConstraints.EAST;
+        panelRegistro.add(new JLabel("Nombre:"), gbcReg);
+        gbcReg.gridx = 1; gbcReg.anchor = GridBagConstraints.WEST;
+        panelRegistro.add(txtNombre, gbcReg);
 
-        gbc.gridx = 0; gbc.gridy = 1; gbc.anchor = GridBagConstraints.EAST;
-        panelRegistro.add(new JLabel("Apellido:"), gbc);
-        gbc.gridx = 1; gbc.anchor = GridBagConstraints.WEST;
-        panelRegistro.add(txtApellido, gbc);
+        gbcReg.gridx = 0; gbcReg.gridy = 1; gbcReg.anchor = GridBagConstraints.EAST;
+        panelRegistro.add(new JLabel("Apellido:"), gbcReg);
+        gbcReg.gridx = 1; gbcReg.anchor = GridBagConstraints.WEST;
+        panelRegistro.add(txtApellido, gbcReg);
 
-        gbc.gridx = 0; gbc.gridy = 2; gbc.anchor = GridBagConstraints.EAST;
-        panelRegistro.add(new JLabel("DNI:"), gbc);
-        gbc.gridx = 1; gbc.anchor = GridBagConstraints.WEST;
-        panelRegistro.add(txtDni, gbc);
+        gbcReg.gridx = 0; gbcReg.gridy = 2; gbcReg.anchor = GridBagConstraints.EAST;
+        panelRegistro.add(new JLabel("DNI:"), gbcReg);
+        gbcReg.gridx = 1; gbcReg.anchor = GridBagConstraints.WEST;
+        panelRegistro.add(txtDni, gbcReg);
 
-        gbc.gridx = 0; gbc.gridy = 3; gbc.anchor = GridBagConstraints.EAST;
-        panelRegistro.add(new JLabel("Email:"), gbc);
-        gbc.gridx = 1; gbc.anchor = GridBagConstraints.WEST;
-        panelRegistro.add(txtEmailRegistro, gbc);
+        gbcReg.gridx = 0; gbcReg.gridy = 3; gbcReg.anchor = GridBagConstraints.EAST;
+        panelRegistro.add(new JLabel("Email:"), gbcReg);
+        gbcReg.gridx = 1; gbcReg.anchor = GridBagConstraints.WEST;
+        panelRegistro.add(txtEmailRegistro, gbcReg);
 
-        gbc.gridx = 0; gbc.gridy = 4; gbc.anchor = GridBagConstraints.EAST;
-        panelRegistro.add(new JLabel("Contraseña:"), gbc);
-        gbc.gridx = 1; gbc.anchor = GridBagConstraints.WEST;
-        panelRegistro.add(txtPasswordRegistro, gbc);
+        gbcReg.gridx = 0; gbcReg.gridy = 4; gbcReg.anchor = GridBagConstraints.EAST;
+        panelRegistro.add(new JLabel("Contraseña:"), gbcReg);
+        gbcReg.gridx = 1; gbcReg.anchor = GridBagConstraints.WEST;
+        panelRegistro.add(txtPasswordRegistro, gbcReg);
 
-        gbc.gridx = 0; gbc.gridy = 5; gbc.anchor = GridBagConstraints.EAST;
-        panelRegistro.add(new JLabel("Confirmar Contraseña:"), gbc);
-        gbc.gridx = 1; gbc.anchor = GridBagConstraints.WEST;
-        panelRegistro.add(txtPasswordConfirm, gbc);
+        gbcReg.gridx = 0; gbcReg.gridy = 5; gbcReg.anchor = GridBagConstraints.EAST;
+        panelRegistro.add(new JLabel("Confirmar Contraseña:"), gbcReg);
+        gbcReg.gridx = 1; gbcReg.anchor = GridBagConstraints.WEST;
+        panelRegistro.add(txtPasswordConfirm, gbcReg);
 
-        gbc.gridx = 0; gbc.gridy = 6; gbc.gridwidth = 2; gbc.anchor = GridBagConstraints.CENTER;
-        panelRegistro.add(btnRegistrar, gbc);
+        gbcReg.gridx = 0; gbcReg.gridy = 6; gbcReg.gridwidth = 2; gbcReg.anchor = GridBagConstraints.CENTER;
+        panelRegistro.add(btnRegistrar, gbcReg);
 
-        tabbedPane.addTab("Iniciar Sesión", panelLogin);
-        tabbedPane.addTab("Registrarse", panelRegistro);
+        gbcReg.gridy = 7; gbcReg.gridwidth = 2;
+        JLabel lblIrLogin = new JLabel("¿Ya tienes cuenta? Inicia sesión");
+        lblIrLogin.setForeground(new Color(41, 128, 185));
+        lblIrLogin.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        panelRegistro.add(lblIrLogin, gbcReg);
 
-        add(tabbedPane, BorderLayout.CENTER);
+        // Añadir paneles al contenedor
+        panelContenedor.add(panelLoginCentral, LOGIN);
+        panelContenedor.add(panelRegistro, REGISTRO);
+        add(panelContenedor, BorderLayout.CENTER);
+
+        // Eventos para cambiar de formulario
+        lblIrRegistro.addMouseListener(new java.awt.event.MouseAdapter() {
+            Color azulNormal = new Color(0, 102, 204);
+            Color azulOscuro = new Color(0, 51, 153);
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                cardLayout.show(panelContenedor, REGISTRO);
+            }
+            public void mousePressed(java.awt.event.MouseEvent evt) {
+                lblIrRegistro.setForeground(azulOscuro);
+            }
+            public void mouseReleased(java.awt.event.MouseEvent evt) {
+                lblIrRegistro.setForeground(azulNormal);
+            }
+        });
+        lblIrLogin.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                cardLayout.show(panelContenedor, LOGIN);
+            }
+        });
     }
 
+    /**
+     * Agrega los listeners y acciones a los botones de login y registro.
+     * Valida los campos, llama al controlador y muestra mensajes según el resultado.
+     */
     private void agregarEventos() {
         btnLogin.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 String email = txtEmailLogin.getText().trim();
                 String password = new String(txtPasswordLogin.getPassword());
-
-                if (email.isEmpty() || password.isEmpty()) {
+                ControladorLoginUsuario.ResultadoLogin resultado = controlador.loginUsuario(email, password);
+                if (resultado.exito) {
                     JOptionPane.showMessageDialog(VentanaLoginUsuario.this,
-                            "Por favor complete todos los campos.",
-                            "Campos Vacíos", JOptionPane.WARNING_MESSAGE);
-                    return;
-                }
-
-                Usuario usuario = ConexionDB.autenticarUsuario(email, password);
-                if (usuario != null && "USUARIO".equals(usuario.getRol())) {
-                    JOptionPane.showMessageDialog(VentanaLoginUsuario.this,
-                            "¡Bienvenido!",
+                            resultado.mensaje,
                             "Acceso Concedido", JOptionPane.INFORMATION_MESSAGE);
-                    new PanelVotacionUsuario(usuario).setVisible(true);
-                    dispose(); // Cierra la ventana de login
+                    new PanelVotacionUsuario(resultado.usuario).setVisible(true);
+                    dispose();
                 } else {
                     JOptionPane.showMessageDialog(VentanaLoginUsuario.this,
-                            "Credenciales incorrectas o no es usuario.",
+                            resultado.mensaje,
                             "Acceso Denegado", JOptionPane.ERROR_MESSAGE);
                 }
             }
@@ -152,45 +330,15 @@ public class VentanaLoginUsuario extends JFrame {
                 String email = txtEmailRegistro.getText().trim();
                 String password = new String(txtPasswordRegistro.getPassword());
                 String passwordConfirm = new String(txtPasswordConfirm.getPassword());
-
-                if (nombre.isEmpty() || apellido.isEmpty() || dni.isEmpty() ||
-                        email.isEmpty() || password.isEmpty() || passwordConfirm.isEmpty()) {
+                ControladorLoginUsuario.ResultadoRegistro resultado = controlador.registrarUsuario(nombre, apellido, dni, email, password, passwordConfirm);
+                if (resultado.exito) {
                     JOptionPane.showMessageDialog(VentanaLoginUsuario.this,
-                            "Por favor complete todos los campos.",
-                            "Campos Vacíos", JOptionPane.WARNING_MESSAGE);
-                    return;
-                }
-
-                if (!password.equals(passwordConfirm)) {
-                    JOptionPane.showMessageDialog(VentanaLoginUsuario.this,
-                            "Las contraseñas no coinciden.",
-                            "Error de Validación", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-
-                if (ConexionDB.emailExiste(email)) {
-                    JOptionPane.showMessageDialog(VentanaLoginUsuario.this,
-                            "El email ya está registrado.",
-                            "Error de Registro", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-
-                if (ConexionDB.dniExiste(dni)) {
-                    JOptionPane.showMessageDialog(VentanaLoginUsuario.this,
-                            "El DNI ya está registrado.",
-                            "Error de Registro", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-
-                Usuario nuevoUsuario = new Usuario(nombre, apellido, email, password, dni, "USUARIO");
-                if (ConexionDB.registrarUsuario(nuevoUsuario)) {
-                    JOptionPane.showMessageDialog(VentanaLoginUsuario.this,
-                            "Usuario registrado exitosamente. Ahora puede iniciar sesión.",
+                            resultado.mensaje,
                             "Registro Exitoso", JOptionPane.INFORMATION_MESSAGE);
-                    tabbedPane.setSelectedIndex(0);
+                    cardLayout.show(panelContenedor, LOGIN);
                 } else {
                     JOptionPane.showMessageDialog(VentanaLoginUsuario.this,
-                            "Error al registrar el usuario.",
+                            resultado.mensaje,
                             "Error de Registro", JOptionPane.ERROR_MESSAGE);
                 }
             }
